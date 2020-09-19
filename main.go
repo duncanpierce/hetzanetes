@@ -2,11 +2,17 @@ package main
 
 import (
 	"github.com/duncanpierce/hetzanetes/cmd"
+	"github.com/hetznercloud/cli/cli"
 	"github.com/spf13/cobra"
 	"os"
 )
 
 func main() {
+	newCLI := cli.NewCLI()
+	newCLI.ReadConfig()
+	newCLI.ReadEnv()
+	client := newCLI.Client()
+	ctx := newCLI.Context
 
 	var defaultCmd = &cobra.Command{
 		Use: "hetzanetes",
@@ -15,7 +21,7 @@ func main() {
 		},
 	}
 
-	defaultCmd.AddCommand(cmd.List())
+	defaultCmd.AddCommand(cmd.List(client, ctx))
 
 	if err := defaultCmd.Execute(); err != nil {
 		os.Exit(1)
