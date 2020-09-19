@@ -3,13 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/impl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
-)
-
-const (
-	roleLabel    string = "hetzanetes"
-	clusterLabel string = "hetzanetes-cluster"
 )
 
 func List(client *hcloud.Client, ctx context.Context) *cobra.Command {
@@ -53,7 +49,7 @@ func List(client *hcloud.Client, ctx context.Context) *cobra.Command {
 
 func hasMarkerLabel(network *hcloud.Network) bool {
 	for key := range network.Labels {
-		if key == roleLabel {
+		if key == impl.RoleLabel {
 			return true
 		}
 	}

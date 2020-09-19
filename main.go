@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/duncanpierce/hetzanetes/cmd"
+	"github.com/duncanpierce/hetzanetes/impl"
 	"github.com/hetznercloud/cli/cli"
 	"github.com/spf13/cobra"
 	"os"
@@ -15,7 +16,7 @@ func main() {
 	ctx := newCLI.Context
 
 	var defaultCmd = &cobra.Command{
-		Use: "hetzanetes",
+		Use: impl.AppName,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},

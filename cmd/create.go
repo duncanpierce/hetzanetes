@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/impl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"net"
@@ -20,13 +21,16 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "create [FLAGS]",
 		Short:            "Create a new cluster",
-		Long:             `Create a new Hetzanetes cluster in a new private network.`,
-		Example:          `  hetzanetes create --name=cluster-1`,
+		Long:             "Create a new Hetzanetes cluster in a new private network.",
+		Example:          impl.AppName + "  hetzanetes create --name=cluster-1",
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			labels[roleLabel] = "cluster"
-			labels[clusterLabel] = clusterName
+			labels[impl.RoleLabel] = "cluster"
+			labels[impl.ClusterLabel] = clusterName
+			labels[impl.OsLabel] = osImage
+
+			// TODO check for name collisions on network and API server before starting
 
 			// TODO do we need to create a subnet, e.g. from 10.0.0.0/16 create subnet 10.0.0.0/24, rather than taking the whole ip range?
 			subnets := []hcloud.NetworkSubnet{
@@ -59,8 +63,9 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			// TODO need to select and pass in an SSH key
+			// TODO need to select and pass in all SSH keys unless some are specified
 			// TODO need an option to select datacenter, although it defaults to fsn1-dc14 anyway
+			labels[impl.RoleLabel] = "api-server"
 			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
 				Name:       clusterName + "-api-1",
 				ServerType: serverType,
@@ -69,7 +74,7 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 				Location:   nil,
 				Datacenter: nil,
 				UserData:   "",
-				Labels:     map[string]string{roleLabel: "api-server", clusterLabel: clusterName},
+				Labels:     labels,
 				Networks:   []*hcloud.Network{network},
 			})
 			if err != nil {
