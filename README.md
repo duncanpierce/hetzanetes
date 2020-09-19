@@ -7,9 +7,9 @@ Create K3s Kubernetes clusters on Hetzner Cloud. With apologies to Hetzner and K
 Right now, nothing. There is no code - just a plan. The aim is to:
 
 * Provide a simple way to set up and manage Kubernetes clusters on Hetzner Cloud.
-* Work with Rancher's lightweight [K3s](Kubernetes distribution). 
-* Install Hetzner's cloud controller manager and storage volume plugins.
-* Set up a firewall and private network for the cluster.
+* Work with Rancher's lightweight [K3s](https://github.com/rancher/k3s/) Kubernetes distribution. 
+* Install Hetzner's [cloud controller manager](https://github.com/hetznercloud/hcloud-cloud-controller-manager) and [storage volume](https://github.com/hetznercloud/csi-driver) plugins.
+* Set up a firewall and private network for the cluster, like [Vito Botta](https://github.com/vitobotta/hetzner-cloud-init) does.
 * Automate security updates.
 
 ## Alternatives
