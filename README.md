@@ -11,6 +11,7 @@ Right now, nothing. There is no code - just a plan. The aim is to:
 * Install Hetzner's [cloud controller manager](https://github.com/hetznercloud/hcloud-cloud-controller-manager) and [storage volume](https://github.com/hetznercloud/csi-driver) plugins.
 * Set up a firewall and private network for the cluster, like [Vito Botta](https://github.com/vitobotta/hetzner-cloud-init) does.
 * Automate security updates.
+* Make the cluster as self-managing as possible.
 
 ## Alternatives
 
