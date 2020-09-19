@@ -22,6 +22,7 @@ func main() {
 	}
 
 	defaultCmd.AddCommand(cmd.List(client, ctx))
+	defaultCmd.AddCommand(cmd.Create(client, ctx))
 
 	if err := defaultCmd.Execute(); err != nil {
 		os.Exit(1)
