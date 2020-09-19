@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	markerLabel string = "hetzanetes"
+	roleLabel    string = "hetzanetes"
+	clusterLabel string = "hetzanetes-cluster"
 )
 
 func List(client *hcloud.Client, ctx context.Context) *cobra.Command {
@@ -52,7 +53,7 @@ func List(client *hcloud.Client, ctx context.Context) *cobra.Command {
 
 func hasMarkerLabel(network *hcloud.Network) bool {
 	for key := range network.Labels {
-		if key == markerLabel {
+		if key == roleLabel {
 			return true
 		}
 	}
