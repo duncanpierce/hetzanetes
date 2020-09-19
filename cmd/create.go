@@ -10,7 +10,6 @@ import (
 )
 
 // TODO add options to --protected, --backups to enable protection and backups
-// TODO add option to select SSH key, defaulting to first one found
 func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 	var clusterName string
 	var ipRange net.IPNet
@@ -26,13 +25,13 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			labels[impl.RoleLabel] = "cluster"
+			labels[impl.RoleLabel] = impl.ClusterRole
 			labels[impl.ClusterLabel] = clusterName
 			labels[impl.OsLabel] = osImage
 
-			// TODO check for name collisions on network and API server before starting
+			// TODO check for name collisions on network and API server before starting, and also on server and network labels
 
-			// TODO do we need to create a subnet, e.g. from 10.0.0.0/16 create subnet 10.0.0.0/24, rather than taking the whole ip range?
+			// TODO should we create a subnet, e.g. from 10.0.0.0/16 create subnet 10.0.0.0/24, rather than taking the whole ip range?
 			subnets := []hcloud.NetworkSubnet{
 				{
 					Type:        hcloud.NetworkSubnetTypeCloud,
@@ -63,14 +62,19 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			// TODO need to select and pass in all SSH keys unless some are specified
+			// TODO allow a label selector to be specified to select keys to use - should also be saved to the cluster network as a label
+			sshKeys, err := client.SSHKey.All(ctx)
+			if err != nil {
+				return err
+			}
+
 			// TODO need an option to select datacenter, although it defaults to fsn1-dc14 anyway
-			labels[impl.RoleLabel] = "api-server"
+			labels[impl.RoleLabel] = impl.ApiServerRole
 			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
 				Name:       clusterName + "-api-1",
 				ServerType: serverType,
 				Image:      image,
-				SSHKeys:    nil,
+				SSHKeys:    sshKeys,
 				Location:   nil,
 				Datacenter: nil,
 				UserData:   "",
