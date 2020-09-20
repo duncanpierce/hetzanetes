@@ -23,9 +23,12 @@ func main() {
 	}
 
 	// TODO work out how to read cluster name from command line without using a --flag
-	defaultCmd.AddCommand(cmd.List(client, ctx))
-	defaultCmd.AddCommand(cmd.Create(client, ctx))
-	defaultCmd.AddCommand(cmd.Delete(client, ctx))
+	defaultCmd.AddCommand(
+		cmd.List(client, ctx),
+		cmd.Create(client, ctx),
+		cmd.Delete(client, ctx),
+		cmd.Repair(client, ctx),
+	)
 	// TODO it would be nice to add hetzner CLI's 'context' command here, since we share the context, but it's package-private
 	// TODO implement "repair" which scans the cluster and recreates resources that are missing, according to the cluster manifest - this would be run as a cronjob in the cluster
 	// should probably kick unlabelled servers off the private network, update SSH keys on all servers to latest matching, provision any servers that are missing, update incorrect server and network labels

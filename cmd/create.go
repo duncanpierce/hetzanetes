@@ -10,6 +10,7 @@ import (
 )
 
 // TODO add options to --protected, --backups to enable protection and backups
+// TODO maybe protected should be the default
 func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 	var clusterName string
 	var ipRange net.IPNet
