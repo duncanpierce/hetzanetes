@@ -76,11 +76,11 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 				ServerType: serverType,
 				Image:      image,
 				SSHKeys:    sshKeys,
-				Location:   nil,
-				Datacenter: nil,
-				UserData:   "",
-				Labels:     labels,
-				Networks:   []*hcloud.Network{network},
+				Location:   nil, // Hetzner recommend specifying a location rather than a datacenter: https://docs.hetzner.cloud/#servers-create-a-server
+				//Datacenter: nil,
+				UserData: "",
+				Labels:   labels,
+				Networks: []*hcloud.Network{network},
 			})
 			if err != nil {
 				return err

@@ -12,6 +12,8 @@ import (
 // Cluster starts with a CronJob manifest that executes `hetzanetes repair all` periodically
 // This can be cloned as a Job to run faster on first start
 // repair all scans the cluster and Hetzner's API to reconcile discrepancies
+// TODO consider how to use and check for hcloud.Actions concerning a resource that are still in progress - to avoid duplicating something already started
+
 func Repair(client *hcloud.Client, ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "repair",
@@ -29,6 +31,7 @@ func Repair(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		RepairFirewall(client, ctx),
 		RepairNetwork(client, ctx),
 		RepairServers(client, ctx),
+		RepairPackages(client, ctx),
 	)
 	return cmd
 }
