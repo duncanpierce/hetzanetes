@@ -24,8 +24,11 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if network == nil {
+				return errors.New(fmt.Sprintf("cluster network %s not found", clusterName))
+			}
 			if network.Labels[impl.RoleLabel] != impl.ClusterRole {
-				return errors.New("the network " + clusterName + " does not have the " + impl.RoleLabel + "=" + impl.ClusterRole + " label")
+				return errors.New(fmt.Sprintf("the network %s does not have the %s=%s label", clusterName, impl.RoleLabel, impl.ClusterRole))
 			}
 			apiServers, err := getServers(client, ctx, impl.ApiServerRole, clusterName, *network)
 			if err != nil {
@@ -43,12 +46,15 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 			}
 			// TODO how do we prevent the cluster from auto-repairing while we're deleting it? Maybe delete should be something the cluster does to itself?
 
+			errs := impl.Errors{}
 			for _, server := range servers {
-				// TODO retry if deletion fails? or keep going and warn at the end?
-				client.Server.Delete(ctx, server)
+				// TODO retry if deletion fails?
+				errs.Catch(client.Server.Delete(ctx, server))
 			}
-			client.Network.Delete(ctx, network)
-			return nil
+			if len(errs) == 0 {
+				errs.Catch(client.Network.Delete(ctx, network))
+			}
+			return errs
 		},
 	}
 	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
