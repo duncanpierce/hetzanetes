@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/cloudinit"
 	"github.com/duncanpierce/hetzanetes/impl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
@@ -11,7 +12,7 @@ import (
 
 // TODO add options to --protected, --backups to enable protection and backups
 // TODO maybe protected should be the default
-func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Command {
 	var clusterName string
 	var ipRange net.IPNet
 	var labels map[string]string
@@ -28,7 +29,16 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			labels[impl.RoleLabel] = impl.ClusterRole
 			labels[impl.ClusterLabel] = clusterName
-			labels[impl.OsLabel] = osImage
+
+			clusterConfig := cloudinit.ClusterConfig{
+				ApiToken:           apiToken,
+				PrivateNetworkName: clusterName,
+				PrivateIpRange:     ipRange,
+			}
+			cloudInit, err := cloudinit.CloudInitTemplate(clusterConfig)
+			if err != nil {
+				return err
+			}
 
 			// TODO check for name collisions on network and API server before starting, and also on server and network labels
 
@@ -69,18 +79,18 @@ func Create(client *hcloud.Client, ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			// TODO need an option to select datacenter, although it defaults to fsn1-dc14 anyway
+			// Hetzner recommend specifying a location rather than a datacenter: https://docs.hetzner.cloud/#servers-create-a-server
+			// TODO need an option to select location, although it defaults to fsn1-dc14 anyway
 			labels[impl.RoleLabel] = impl.ApiServerRole
 			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
 				Name:       clusterName + "-api-1",
 				ServerType: serverType,
 				Image:      image,
 				SSHKeys:    sshKeys,
-				Location:   nil, // Hetzner recommend specifying a location rather than a datacenter: https://docs.hetzner.cloud/#servers-create-a-server
-				//Datacenter: nil,
-				UserData: "",
-				Labels:   labels,
-				Networks: []*hcloud.Network{network},
+				Location:   nil,
+				UserData:   cloudInit,
+				Labels:     labels,
+				Networks:   []*hcloud.Network{network},
 			})
 			if err != nil {
 				return err

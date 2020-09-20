@@ -25,7 +25,7 @@ func main() {
 	// TODO work out how to read cluster name from command line without using a --flag
 	defaultCmd.AddCommand(
 		cmd.List(client, ctx),
-		cmd.Create(client, ctx),
+		cmd.Create(client, ctx, newCLI.Token),
 		cmd.Delete(client, ctx),
 		cmd.Repair(client, ctx),
 	)

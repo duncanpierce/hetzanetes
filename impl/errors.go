@@ -20,3 +20,10 @@ func (errs *Errors) Catch(_ *hcloud.Response, err error) {
 		*errs = append(*errs, err)
 	}
 }
+
+func (errs Errors) OrNil() error {
+	if len(errs) == 0 {
+		return nil
+	}
+	return errs
+}

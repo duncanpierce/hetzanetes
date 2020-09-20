@@ -54,7 +54,7 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 			if len(errs) == 0 {
 				errs.Catch(client.Network.Delete(ctx, network))
 			}
-			return errs
+			return errs.OrNil()
 		},
 	}
 	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
