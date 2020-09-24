@@ -34,6 +34,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				ApiToken:           apiToken,
 				PrivateNetworkName: clusterName,
 				PrivateIpRange:     ipRange.String(),
+				K3sInstallEnvVars:  "",
 			}
 			cloudInit, err := cloudinit.Template(clusterConfig)
 			if err != nil {
@@ -53,12 +54,13 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			}
 
 			// TODO protect this network - it could be difficult to repair if deleted (e.g. server gets a new interface flannel doesn't know about)
+			networkLabels := labels.Copy().Mark(label.PrivateNetworkLabel)
 			network, _, err := client.Network.Create(ctx, hcloud.NetworkCreateOpts{
 				Name:    clusterName,
 				IPRange: &ipRange,
 				Subnets: subnets,
 				Routes:  nil,
-				Labels:  labels.Copy().Mark(label.PrivateNetworkLabel),
+				Labels:  networkLabels,
 			})
 			if err != nil {
 				return err
@@ -95,8 +97,14 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			if err != nil {
 				return err
 			}
-
 			fmt.Printf("Created server %s in %s\n", server.Server.Name, server.Server.Datacenter.Name)
+
+			_, _, err = client.Network.Update(ctx, network, hcloud.NetworkUpdateOpts{
+				Labels: networkLabels.Set(label.EndpointLabel, server.Server.PublicNet.IPv4.IP.String()+"-6443"),
+			})
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 	}

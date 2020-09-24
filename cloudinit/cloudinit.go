@@ -33,7 +33,7 @@ runcmd:
   - ufw -f default deny incoming
   - ufw -f default allow outgoing
   - ufw -f enable
-  - "curl -sfL 'https://get.k3s.io' | sh -s - --disable-cloud-controller --kubelet-arg cloud-provider=external --flannel-iface=$(ip -j route list {{ .PrivateIpRange }} | jq -r .[0].dev)"
+  - "curl -sfL 'https://get.k3s.io' | {{ .K3sInstallEnvVars }} sh -s - --disable-cloud-controller --kubelet-arg cloud-provider=external --flannel-iface=$(ip -j route list {{ .PrivateIpRange }} | jq -r .[0].dev)"
   - "kubectl -n kube-system create secret generic hcloud --from-literal=token={{.ApiToken}} --from-literal=network={{.PrivateNetworkName}}"
   - "curl -sfL 'https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.7.0-networks.yaml' | awk '{sub(\"10\\.244\\.0\\.0/16\", \"10.42.0.0/16\"); print}' | kubectl apply -f -"
 `
@@ -47,6 +47,7 @@ type ClusterConfig struct {
 	ApiToken           string
 	PrivateNetworkName string
 	PrivateIpRange     string
+	K3sInstallEnvVars  string
 }
 
 func Template(config ClusterConfig) (string, error) {

@@ -6,6 +6,7 @@ const (
 	PrivateNetworkLabel = AppName + "-cluster-network"
 	ApiServerLabel      = AppName + "-api"
 	WorkerLabel         = AppName + "-worker"
+	EndpointLabel       = AppName + "-endpoint"
 )
 
 type Labels map[string]string
