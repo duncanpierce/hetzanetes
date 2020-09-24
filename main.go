@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/duncanpierce/hetzanetes/cmd"
-	"github.com/duncanpierce/hetzanetes/impl"
+	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/cli/cli"
 	"github.com/spf13/cobra"
 	"os"
@@ -16,13 +16,14 @@ func main() {
 	ctx := newCLI.Context
 
 	var defaultCmd = &cobra.Command{
-		Use: impl.AppName,
+		Use: label.AppName,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
 	}
 
 	// TODO work out how to read cluster name from command line without using a --flag
+	// TODO need to be able to pass a --context arg
 	defaultCmd.AddCommand(
 		cmd.List(client, ctx),
 		cmd.Create(client, ctx, newCLI.Token),

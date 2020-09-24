@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"github.com/duncanpierce/hetzanetes/impl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +18,7 @@ func Repair(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		Use:              "repair",
 		Short:            "Commands for repairing a cluster",
 		Long:             "Commands for repairing a cluster. Normally run automatically by the cluster itself.",
-		Example:          impl.AppName + "  hetzanetes repair all --name=cluster-1",
+		Example:          "  hetzanetes repair all --name=cluster-1",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()

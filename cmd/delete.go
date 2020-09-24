@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/impl"
+	"github.com/duncanpierce/hetzanetes/catch"
+	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,7 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		Use:              "delete [FLAGS]",
 		Short:            "Delete a cluster",
 		Long:             "Delete a Hetzanetes cluster and all associated resources including servers and networks.",
-		Example:          impl.AppName + "  hetzanetes delete --name=cluster-1",
+		Example:          "  hetzanetes delete --name=cluster-1",
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -27,27 +28,22 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 			if network == nil {
 				return errors.New(fmt.Sprintf("cluster network %s not found", clusterName))
 			}
-			if network.Labels[impl.RoleLabel] != impl.ClusterRole {
-				return errors.New(fmt.Sprintf("the network %s does not have the %s=%s label", clusterName, impl.RoleLabel, impl.ClusterRole))
+			if _, labelled := network.Labels[label.PrivateNetworkLabel]; !labelled {
+				return errors.New(fmt.Sprintf("private network %s does not have %s label", clusterName, label.PrivateNetworkLabel))
 			}
-			apiServers, err := getServers(client, ctx, impl.ApiServerRole, clusterName, *network)
-			if err != nil {
-				return err
-			}
-			workers, err := getServers(client, ctx, impl.WorkerRole, clusterName, *network)
+			labelledServers, err := getServers(client, ctx, clusterName, *network)
 			if err != nil {
 				return err
 			}
 			// TODO list the unknown servers on the cluster network rather than returning their number
-			servers := append(apiServers, workers...)
-			discrepancy := len(network.Servers) - len(servers)
+			discrepancy := len(network.Servers) - len(labelledServers)
 			if discrepancy > 0 {
 				return errors.New(fmt.Sprintf("%d servers without the correct labels are attached to the cluster network", discrepancy))
 			}
 			// TODO how do we prevent the cluster from auto-repairing while we're deleting it? Maybe delete should be something the cluster does to itself?
 
-			errs := impl.Errors{}
-			for _, server := range servers {
+			errs := catch.Errors{}
+			for _, server := range labelledServers {
 				// TODO retry if deletion fails?
 				errs.Catch(client.Server.Delete(ctx, server))
 			}
@@ -63,10 +59,10 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func getServers(client *hcloud.Client, ctx context.Context, role, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
+func getServers(client *hcloud.Client, ctx context.Context, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
 	servers, err := client.Server.AllWithOpts(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
-			LabelSelector: impl.RoleLabel + "=" + role + "," + impl.ClusterLabel + "=" + clusterName,
+			LabelSelector: label.ClusterNameLabel + "=" + clusterName,
 		},
 	})
 	if err != nil {

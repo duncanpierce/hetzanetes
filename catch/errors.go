@@ -1,4 +1,4 @@
-package impl
+package catch
 
 import (
 	"github.com/hetznercloud/hcloud-go/hcloud"

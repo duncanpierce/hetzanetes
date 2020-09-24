@@ -2,7 +2,6 @@ package cloudinit
 
 import (
 	"bytes"
-	"net"
 	"text/template"
 )
 
@@ -15,6 +14,7 @@ package_upgrade: true
 packages:
   - ufw
   - curl
+  - jq
 package_reboot_if_required: true
 write_files:
   - path: /var/run/hetzanetes
@@ -25,26 +25,31 @@ write_files:
 
       Installed OK
 runcmd:
-  - ufw allow proto tcp from any to any port 22,6443
+  - ufw allow proto tcp from any to any port 22,6443 # TODO api servers only
   - ufw allow from 10.244.0.0/16 # TODO try to remove this - should not be needed
-  - ufw allow from 10.43.0.0/16
+  - ufw allow from 10.43.0.0/16 # TODO try to parameterize
   - ufw allow from 10.42.0.0/16
   - ufw allow from 10.0.0.0/16
   - ufw -f default deny incoming
   - ufw -f default allow outgoing
   - ufw -f enable
-  - "curl -sfL https://get.k3s.io | sh -s - --disable-cloud-controller --kubelet-arg cloud-provider=external"
+  - "curl -sfL 'https://get.k3s.io' | sh -s - --disable-cloud-controller --kubelet-arg cloud-provider=external --flannel-iface=$(ip -j route list {{ .PrivateIpRange }} | jq -r .[0].dev)"
   - "kubectl -n kube-system create secret generic hcloud --from-literal=token={{.ApiToken}} --from-literal=network={{.PrivateNetworkName}}"
-  - "curl 'https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.7.0-networks.yaml' | awk '{sub(\"10\\.244\\.0\\.0/16\", \"10.42.0.0/16\"); print}' | kubectl apply -f -"
+  - "curl -sfL 'https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.7.0-networks.yaml' | awk '{sub(\"10\\.244\\.0\\.0/16\", \"10.42.0.0/16\"); print}' | kubectl apply -f -"
 `
+
+// TODO there is also --flannel-conf : where is it and what's in it?
+
+// TODO including the following causes collateral damage - should try to use something like https://github.com/krishicks/yaml-patch or Kustomize or send PR to make it config rather than hardcoded
+//   - "curl 'https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.4.0/deploy/kubernetes/hcloud-csi.yml' | awk '{sub(\"name: hcloud-csi\", \"name: hcloud\"); print}' | kubectl apply -f -"
 
 type ClusterConfig struct {
 	ApiToken           string
 	PrivateNetworkName string
-	PrivateIpRange     net.IPNet
+	PrivateIpRange     string
 }
 
-func CloudInitTemplate(config ClusterConfig) (string, error) {
+func Template(config ClusterConfig) (string, error) {
 	tmpl, err := template.New("cloudinit").Parse(cloudInitScript)
 	if err != nil {
 		return "", err

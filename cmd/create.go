@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/cloudinit"
-	"github.com/duncanpierce/hetzanetes/impl"
+	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"net"
@@ -15,7 +15,7 @@ import (
 func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Command {
 	var clusterName string
 	var ipRange net.IPNet
-	var labels map[string]string
+	var labelsMap map[string]string
 	var serverType string
 	var osImage string
 
@@ -23,26 +23,26 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 		Use:              "create [FLAGS]",
 		Short:            "Create a new cluster",
 		Long:             "Create a new Hetzanetes cluster in a new private network.",
-		Example:          impl.AppName + "  hetzanetes create --name=cluster-1",
+		Example:          "  hetzanetes create --name=cluster-1",
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			labels[impl.RoleLabel] = impl.ClusterRole
-			labels[impl.ClusterLabel] = clusterName
+			var labels label.Labels = labelsMap
+			labels[label.ClusterNameLabel] = clusterName
 
 			clusterConfig := cloudinit.ClusterConfig{
 				ApiToken:           apiToken,
 				PrivateNetworkName: clusterName,
-				PrivateIpRange:     ipRange,
+				PrivateIpRange:     ipRange.String(),
 			}
-			cloudInit, err := cloudinit.CloudInitTemplate(clusterConfig)
+			cloudInit, err := cloudinit.Template(clusterConfig)
 			if err != nil {
 				return err
 			}
 
 			// TODO check for name collisions on network and API server before starting, and also on server and network labels
+			// TODO split this out behind a driver interface to allow --dry-run
 
-			// TODO should we create a subnet, e.g. from 10.0.0.0/16 create subnet 10.0.0.0/24, rather than taking the whole ip range?
 			subnets := []hcloud.NetworkSubnet{
 				{
 					Type:        hcloud.NetworkSubnetTypeCloud,
@@ -52,17 +52,18 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				},
 			}
 
+			// TODO protect this network - it could be difficult to repair if deleted (e.g. server gets a new interface flannel doesn't know about)
 			network, _, err := client.Network.Create(ctx, hcloud.NetworkCreateOpts{
 				Name:    clusterName,
 				IPRange: &ipRange,
 				Subnets: subnets,
 				Routes:  nil,
-				Labels:  labels,
+				Labels:  labels.Copy().Mark(label.PrivateNetworkLabel),
 			})
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Created network %s\n", network.Name)
+			fmt.Printf("Created network %s (%s)\n", network.Name, network.IPRange.String())
 
 			serverType, _, err := client.ServerType.GetByName(ctx, serverType)
 			if err != nil {
@@ -73,15 +74,14 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				return err
 			}
 
-			// TODO allow a label selector to be specified to select keys to use - should also be saved to the cluster network as a label
+			// TODO allow a label selector to select keys to use (repair will keep it up to date)
 			sshKeys, err := client.SSHKey.All(ctx)
 			if err != nil {
 				return err
 			}
 
-			// Hetzner recommend specifying a location rather than a datacenter: https://docs.hetzner.cloud/#servers-create-a-server
-			// TODO need an option to select location, although it defaults to fsn1-dc14 anyway
-			labels[impl.RoleLabel] = impl.ApiServerRole
+			// Hetzner recommend specifying locations rather than datacenters: https://docs.hetzner.cloud/#servers-create-a-server
+			// TODO add --regions option
 			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
 				Name:       clusterName + "-api-1",
 				ServerType: serverType,
@@ -89,7 +89,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				SSHKeys:    sshKeys,
 				Location:   nil,
 				UserData:   cloudInit,
-				Labels:     labels,
+				Labels:     labels.Copy().Mark(label.ApiServerLabel).Mark(label.WorkerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
 				Networks:   []*hcloud.Network{network},
 			})
 			if err != nil {
@@ -102,8 +102,10 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 	}
 	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
 	cmd.MarkFlagRequired("name")
-	cmd.Flags().IPNetVar(&ipRange, "ip-range", net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}, "Network IP range")
-	cmd.Flags().StringToStringVar(&labels, "label", map[string]string{}, "User-defined labels ('key=value') (can be specified multiple times)")
+	cmd.Flags().IPNetVar(&ipRange, "cluster-ip-range", net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}, "Cluster network IP range")
+	// TODO remove cluster-ip-range option? make it an attribute of the network provider?
+	// TODO allow create-time-only configuration of pod and service IP ranges? might be easier to leave it on defaults
+	cmd.Flags().StringToStringVar(&labelsMap, "label", map[string]string{}, "User-defined labels ('key=value') (can be specified multiple times)")
 	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")
 	cmd.Flags().StringVar(&osImage, "os-image", "ubuntu-20.04", "Operating system image")
 
