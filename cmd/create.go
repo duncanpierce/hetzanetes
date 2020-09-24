@@ -35,6 +35,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				PrivateNetworkName: clusterName,
 				PrivateIpRange:     ipRange.String(),
 				K3sInstallEnvVars:  "",
+				K3sInstallArgs:     "--disable-cloud-controller",
 			}
 			cloudInit, err := cloudinit.Template(clusterConfig)
 			if err != nil {
@@ -100,7 +101,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			fmt.Printf("Created server %s in %s\n", server.Server.Name, server.Server.Datacenter.Name)
 
 			_, _, err = client.Network.Update(ctx, network, hcloud.NetworkUpdateOpts{
-				Labels: networkLabels.Set(label.EndpointLabel, server.Server.PublicNet.IPv4.IP.String()+"-6443"),
+				Labels: networkLabels.Set(label.EndpointLabel, server.Server.PublicNet.IPv4.IP.String()),
 			})
 			if err != nil {
 				return err

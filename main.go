@@ -27,6 +27,7 @@ func main() {
 	defaultCmd.AddCommand(
 		cmd.List(client, ctx),
 		cmd.Create(client, ctx, newCLI.Token),
+		cmd.Grow(client, ctx, newCLI.Token),
 		cmd.Delete(client, ctx),
 		cmd.Repair(client, ctx),
 	)
