@@ -1,0 +1,101 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+packages:
+  - ["ufw","curl","jq"]
+package_reboot_if_required: true
+write_files:
+  - path: "{{.InstallDirectory}}/kustomization.yaml"
+    content: |
+      apiVersion: kustomize.config.k8s.io/v1beta1
+      kind: Kustomization
+      resources:
+        - hetzner-secret.tmpl
+        - hetzner-ccm.yaml
+        - hetzner-csi.yaml
+      patches:
+        - patch.yaml
+  - path: "{{.InstallDirectory}}/hetzner-secret.yaml"
+    content: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: hcloud
+        namespace: kube-system
+      stringData:
+        token: "{{.HetznerApiToken}}"
+  - path: "{{.InstallDirectory}}/patch.yaml"
+    content: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: hcloud-cloud-controller-manager
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            containers:
+              - name: hcloud-cloud-controller-manager
+                command:
+                  - "/bin/hcloud-cloud-controller-manager"
+                  - "--cloud-provider=hcloud"
+                  - "--leader-elect=false"
+                  - "--allow-untagged-cloud"
+                  - "--allocate-node-cidrs=true"
+                  - "--cluster-cidr={{.PodIpRange}}"
+                env:
+                  - name: HCLOUD_NETWORK
+                    value: "{{.PrivateNetworkName}}"
+                    valueFrom:
+      ---
+      kind: StatefulSet
+      apiVersion: apps/v1
+      metadata:
+        name: hcloud-csi-controller
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            containers:
+              - name: csi-provisioner
+                env:
+                  - name: HCLOUD_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        name: hcloud
+                        key: token
+      ---
+      kind: DaemonSet
+      apiVersion: apps/v1
+      metadata:
+        name: hcloud-csi-node
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            containers:
+              - name: hcloud-csi-driver
+                env:
+                  - name: HCLOUD_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        name: hcloud
+                        key: token
+runcmd:
+  - ufw allow proto tcp from any to any port 22{{if .ApiServer}},6443{{end}}
+  - ufw allow from {{.PodIpRange}}
+  - ufw allow from {{.ServiceIpRange}}
+  - ufw allow from {{.PrivateIpRange}}
+  - ufw -f default deny incoming
+  - ufw -f default allow outgoing
+  - ufw -f enable
+{{if .ApiServer}}
+  {{/* TODO there is also --flannel-conf : where is it and what's in it? */}}
+  - "curl -sfL 'https://get.k3s.io' | sh -s - --disable servicelb --disable local-storage --disable-cloud-controller --kubelet-arg cloud-provider=external --flannel-iface={{template "get-private-interface" .}}"
+  - "curl -sfL 'https://raw.githubusercontent.com/hetznercloud/hcloud-cloud-controller-manager/master/deploy/v1.7.0-networks.yaml' > {{.InstallDirectory}}/hetzner-ccm.yaml"
+  - "curl -sfL 'https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.4.0/deploy/kubernetes/hcloud-csi.yml' > {{.InstallDirectory}}/hetzner-csi.yaml"
+  - "apply -k {{.InstallDirectory}}"
+{{else}}
+  - "curl -sfL 'https://get.k3s.io' | K3S_URL=https://{{.ApiEndpoint}}:6443 K3S_TOKEN={{.JoinToken}} sh -s - --kubelet-arg cloud-provider=external --flannel-iface={{template "get-private-interface" .}}"
+{{end}}

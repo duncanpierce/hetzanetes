@@ -3,8 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/cloudinit"
 	"github.com/duncanpierce/hetzanetes/label"
+	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"net"
@@ -13,6 +13,7 @@ import (
 // TODO add options to --protected, --backups to enable protection and backups
 // TODO maybe protected should be the default
 func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Command {
+	var dryRun bool
 	var clusterName string
 	var ipRange net.IPNet
 	var labelsMap map[string]string
@@ -30,16 +31,20 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			var labels label.Labels = labelsMap
 			labels[label.ClusterNameLabel] = clusterName
 
-			clusterConfig := cloudinit.ClusterConfig{
-				ApiToken:           apiToken,
+			serverConfig := tmpl.ClusterConfig{
+				ApiServer:          true,
+				HetznerApiToken:    apiToken,
 				PrivateNetworkName: clusterName,
 				PrivateIpRange:     ipRange.String(),
-				K3sInstallEnvVars:  "",
-				K3sInstallArgs:     "--disable-cloud-controller",
+				PodIpRange:         "10.42.0.0/16",
+				ServiceIpRange:     "10.43.0.0/16",
+				InstallDirectory:   "/var/run/hetzanetes",
 			}
-			cloudInit, err := cloudinit.Template(clusterConfig)
-			if err != nil {
-				return err
+			cloudInit := tmpl.Template(serverConfig)
+
+			if dryRun {
+				fmt.Printf("Would create server with cloud-init file\n%s\n", cloudInit)
+				return nil
 			}
 
 			// TODO check for name collisions on network and API server before starting, and also on server and network labels
@@ -101,7 +106,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			fmt.Printf("Created server %s in %s\n", server.Server.Name, server.Server.Datacenter.Name)
 
 			_, _, err = client.Network.Update(ctx, network, hcloud.NetworkUpdateOpts{
-				Labels: networkLabels.Set(label.EndpointLabel, server.Server.PublicNet.IPv4.IP.String()),
+				Labels: networkLabels.Set(label.EndpointLabel, server.Server.PrivateNet[0].IP.String()), // TODO why do k3s workers need the private IP, rather than the public one?
 			})
 			if err != nil {
 				return err
@@ -117,6 +122,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 	cmd.Flags().StringToStringVar(&labelsMap, "label", map[string]string{}, "User-defined labels ('key=value') (can be specified multiple times)")
 	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")
 	cmd.Flags().StringVar(&osImage, "os-image", "ubuntu-20.04", "Operating system image")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show what would be done without taking any action")
 
 	return cmd
 }

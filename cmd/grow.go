@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/cloudinit"
 	"github.com/duncanpierce/hetzanetes/label"
+	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 )
@@ -47,17 +47,14 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			nodeName := clusterName + "-worker-" + nodeSuffix
 			ipRange := network.Subnets[0].IPRange
 
-			clusterConfig := cloudinit.ClusterConfig{
-				ApiToken:           apiToken,
+			clusterConfig := tmpl.ClusterConfig{
+				ApiServer:          false,
+				ApiEndpoint:        endpoint,
+				HetznerApiToken:    apiToken,
 				PrivateNetworkName: clusterName,
 				PrivateIpRange:     ipRange.String(),
-				K3sInstallEnvVars:  "K3S_URL=https://" + endpoint + ":6443 K3S_TOKEN=" + joinToken + " K3S_NODE_NAME=" + nodeName,
-				K3sInstallArgs:     "",
 			}
-			cloudInit, err := cloudinit.Template(clusterConfig)
-			if err != nil {
-				return err
-			}
+			cloudInit := tmpl.Template(clusterConfig)
 
 			// TODO check for name collisions new server before starting
 
