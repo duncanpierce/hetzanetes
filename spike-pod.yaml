@@ -1,5 +1,8 @@
 # sudo docker build -t duncanpierce/hetzanetes .
 # sudo docker push duncanpierce/hetzanetes
+# kubectl apply -f spike-pod.yaml
+# kubectl logs -f spike -n hetzanetes-test
+# kubectl delete -f spike-pod.yaml
 apiVersion: v1
 kind: Pod
 metadata:
