@@ -105,12 +105,6 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			}
 			fmt.Printf("Created server %s in %s\n", server.Server.Name, server.Server.Datacenter.Name)
 
-			_, _, err = client.Network.Update(ctx, network, hcloud.NetworkUpdateOpts{
-				Labels: networkLabels.Set(label.EndpointLabel, server.Server.PrivateNet[0].IP.String()), // TODO why do k3s workers need the private IP, rather than the public one?
-			})
-			if err != nil {
-				return err
-			}
 			return nil
 		},
 	}
