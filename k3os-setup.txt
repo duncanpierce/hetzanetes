@@ -19,3 +19,4 @@ k3os:
 
 TODO requires some configuration of k3os / k3s to get it working with etcd
 Need to get it working with Hetzner private network
+Add "--cluster-init" flag to k3s_args to use embedded etcd - see https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/
