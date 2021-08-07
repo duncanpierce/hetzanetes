@@ -1,0 +1,21 @@
+curl https://raw.githubusercontent.com/rancher/k3os/master/install.sh > install.sh
+chmod a+x install.sh 
+./install.sh --takeover --debug --no-format --config config.yaml /dev/sda1 https://github.com/rancher/k3os/releases/download/v0.20.7-k3s1r0/k3os-amd64.iso
+
+needs a config.yaml - see https://github.com/rancher/k3os#configuration-reference
+SSH key is for "rancher" user - there's no root account - hcloud server ssh -u rancher <servername> to log in
+
+ssh_authorized_keys:
+- ssh-rsa ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAw1t25UBm5ED/h6ZkIXN0VWLinh7a9kvdQUwhr43BYuyFN1lo8nmAHPRho3luuv95HMXoWp98FAeGcKv0m4CtYRSTORrvoqLZQRJs12IcjTQ0pZpaPbqYmpv2l6x232/v3gbQWUT8USupsYfNO6RJ/+GOm3giLTAyDlhr0vTJQbWj5j3q+C0983KwTAh7JANLAa7Dg6ninLXEpDgJZs6XXy7RhIPc4bzCX7XlcGDRSU+1PuRjt5vIqADkUHRUrn5NELw/kS2KwyeG3k3Vysy3mBoxcrWU+RZHQdgXJRgKKVZ/cmeU7+8afE1xWf2jLLzi14oSXX7rvqDnok3pNdHLUw==
+k3os:
+  data_sources:
+  - hetzner
+  ntp_servers:
+  - 0.us.pool.ntp.org
+  - 1.us.pool.ntp.org
+  k3s_args:
+  - server
+
+
+TODO requires some configuration of k3os / k3s to get it working with etcd
+Need to get it working with Hetzner private network
