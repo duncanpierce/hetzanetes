@@ -1,19 +1,21 @@
 package main
 
 import (
+	"context"
 	"github.com/duncanpierce/hetzanetes/cmd"
 	"github.com/duncanpierce/hetzanetes/label"
-	"github.com/hetznercloud/cli/cli"
+	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"os"
 )
 
 func main() {
-	newCLI := cli.NewCLI()
-	newCLI.ReadConfig()
-	newCLI.ReadEnv()
-	client := newCLI.Client()
-	ctx := newCLI.Context
+	hcloudToken := os.Getenv("HCLOUD_TOKEN")
+	if hcloudToken == "" {
+		panic("Environment variable HCLOUD_TOKEN must contain a Hetzner Cloud API token")
+	}
+	client := hcloud.NewClient(hcloud.WithToken(hcloudToken))
+	ctx := context.Background()
 
 	var defaultCmd = &cobra.Command{
 		Use: label.AppName,
@@ -26,8 +28,8 @@ func main() {
 	// TODO need to be able to pass a --context arg
 	defaultCmd.AddCommand(
 		cmd.List(client, ctx),
-		cmd.Create(client, ctx, newCLI.Token),
-		cmd.Grow(client, ctx, newCLI.Token),
+		cmd.Create(client, ctx, hcloudToken),
+		cmd.Grow(client, ctx, hcloudToken),
 		cmd.Delete(client, ctx),
 		cmd.Repair(client, ctx),
 		cmd.Spike(ctx),

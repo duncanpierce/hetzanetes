@@ -28,7 +28,7 @@ They are all worth checking out, especially if this project doesn't meet your ne
 
 ## How it works
 
-1. At the moment, `hetzanetes` shares configuration with [Hetzner's command line interpreter](https://github.com/hetznercloud/cli), so you need to configure that first. If this is the first run, you need to provide a [Hetzner Cloud API token](https://console.hetzner.cloud/projects) > (your project) > Security > API tokens.
+1. `hetzanetes` used to share configuration with [Hetzner's command line interpreter](https://github.com/hetznercloud/cli) but it's now decoupled, so you need to set an environment variable HCLOUD_TOKEN with an API token obtained from [Hetzner Cloud API token](https://console.hetzner.cloud/projects) > (your project) > Security > API tokens.
 2. Hetzanetes will set up a private network in your Hetzner Cloud project, attach some labels for configuration purposes, and create a single Kubernetes API server node.
 3. (in future) When the single API server node starts, it will create further API server and worker nodes and join them to the cluster.
 4. All nodes are joined to the private network, have a firewall (using `ufw`) and are set up for unattended upgrades.
