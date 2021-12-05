@@ -2,10 +2,13 @@ package tmpl
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
-	"strings"
 	"text/template"
 )
+
+//go:embed files/*
+var files embed.FS
 
 type ClusterConfig struct {
 	ApiServer          bool
@@ -16,23 +19,19 @@ type ClusterConfig struct {
 	PodIpRange         string
 	ServiceIpRange     string
 	InstallDirectory   string
-	// TODO add Version map[string]string and emit versions in templates unless the key is missing
+	// TODO add Version map[string]string and emit versions in files unless the key is missing
 }
 
 func Template(config ClusterConfig) string {
-	template := template.New("")
-	for _, assetName := range AssetNames() {
-		assetNameAndExtension := strings.Split(assetName, ".")
-		tmplSource := "{{define \"" + assetNameAndExtension[0] + "\"}}" + string(MustAsset(assetName)) + "{{end}}"
-		_, err := template.Parse(tmplSource)
-		if err != nil {
-			panic(fmt.Sprintf("error parsing template %s", assetName))
-		}
+	t, err := template.ParseFS(files, "files/*")
+	if err != nil {
+		panic(fmt.Sprintf("error loading templates: %s", err.Error()))
 	}
 	var buffer bytes.Buffer
-	err := template.ExecuteTemplate(&buffer, "cloudinit", config)
+	err = t.ExecuteTemplate(&buffer, "cloudinit.yaml", config)
 	if err != nil {
 		panic(fmt.Sprintf("error expanding template: %s", err.Error()))
 	}
-	return buffer.String()
+	result := buffer.String()
+	return result
 }
