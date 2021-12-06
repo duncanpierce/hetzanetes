@@ -82,44 +82,45 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				return err
 			}
 
-			// TODO attach firewalls
 			_, allIPv4, _ := net.ParseCIDR("0.0.0.0/0")
 			_, allIPv6, _ := net.ParseCIDR("::/0")
 			sshPort := "22"
-			client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
-				Name: clusterName + "-api",
-				Rules: []hcloud.FirewallRule{
-					{
-						Port:      &sshPort,
-						Protocol:  hcloud.FirewallRuleProtocolTCP,
-						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
-						Direction: hcloud.FirewallRuleDirectionIn,
-					},
-					{
-						Protocol:  hcloud.FirewallRuleProtocolICMP,
-						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
-						Direction: hcloud.FirewallRuleDirectionIn,
-					},
+			k3sApiPort := "6443"
+			firewallRules := []hcloud.FirewallRule{
+				{
+					Protocol:  hcloud.FirewallRuleProtocolICMP,
+					SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
+					Direction: hcloud.FirewallRuleDirectionIn,
 				},
-				ApplyTo: nil,
-			})
-			client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
-				Name: clusterName + "-worker",
-				Rules: []hcloud.FirewallRule{
-					{
-						Port:      &sshPort,
-						Protocol:  hcloud.FirewallRuleProtocolTCP,
-						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
-						Direction: hcloud.FirewallRuleDirectionIn,
-					},
-					{
-						Protocol:  hcloud.FirewallRuleProtocolICMP,
-						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
-						Direction: hcloud.FirewallRuleDirectionIn,
-					},
+				{
+					Port:      &sshPort,
+					Protocol:  hcloud.FirewallRuleProtocolTCP,
+					SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
+					Direction: hcloud.FirewallRuleDirectionIn,
 				},
-				ApplyTo: nil,
+				// TODO allow from serverConfig.{PrivateIpRange,PodIpRange,ServiceIpRange}
+			}
+			_, _, err = client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
+				Name:  clusterName + "-worker",
+				Rules: firewallRules,
 			})
+			if err != nil {
+				return err
+			}
+			// TODO API port not required if we use a load balancer and access from private IP
+			firewallRules = append(firewallRules, hcloud.FirewallRule{
+				Port:      &k3sApiPort,
+				Protocol:  hcloud.FirewallRuleProtocolTCP,
+				SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
+				Direction: hcloud.FirewallRuleDirectionIn,
+			})
+			apiFirewallCreateResult, _, err := client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
+				Name:  clusterName + "-api",
+				Rules: firewallRules,
+			})
+			if err != nil {
+				return err
+			}
 
 			// TODO allow a label selector to select keys to use (repair will keep it up to date)
 			sshKeys, err := client.SSHKey.All(ctx)
@@ -138,6 +139,9 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				UserData:   cloudInit,
 				Labels:     labels.Copy().Mark(label.ApiServerLabel).Mark(label.WorkerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
 				Networks:   []*hcloud.Network{network},
+				Firewalls: []*hcloud.ServerCreateFirewall{
+					{Firewall: *apiFirewallCreateResult.Firewall},
+				},
 			})
 			if err != nil {
 				return err
