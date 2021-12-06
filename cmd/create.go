@@ -82,6 +82,45 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				return err
 			}
 
+			// TODO attach firewalls
+			_, allIPv4, _ := net.ParseCIDR("0.0.0.0/0")
+			_, allIPv6, _ := net.ParseCIDR("::/0")
+			sshPort := "22"
+			client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
+				Name: clusterName + "-api",
+				Rules: []hcloud.FirewallRule{
+					{
+						Port:      &sshPort,
+						Protocol:  hcloud.FirewallRuleProtocolTCP,
+						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
+						Direction: hcloud.FirewallRuleDirectionIn,
+					},
+					{
+						Protocol:  hcloud.FirewallRuleProtocolICMP,
+						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
+						Direction: hcloud.FirewallRuleDirectionIn,
+					},
+				},
+				ApplyTo: nil,
+			})
+			client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
+				Name: clusterName + "-worker",
+				Rules: []hcloud.FirewallRule{
+					{
+						Port:      &sshPort,
+						Protocol:  hcloud.FirewallRuleProtocolTCP,
+						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
+						Direction: hcloud.FirewallRuleDirectionIn,
+					},
+					{
+						Protocol:  hcloud.FirewallRuleProtocolICMP,
+						SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
+						Direction: hcloud.FirewallRuleDirectionIn,
+					},
+				},
+				ApplyTo: nil,
+			})
+
 			// TODO allow a label selector to select keys to use (repair will keep it up to date)
 			sshKeys, err := client.SSHKey.All(ctx)
 			if err != nil {

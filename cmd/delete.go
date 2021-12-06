@@ -50,6 +50,17 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 			if len(errs) == 0 {
 				errs.Catch(client.Network.Delete(ctx, network))
 			}
+
+			apiFirewall, _, apiFirewallErr := client.Firewall.GetByName(ctx, clusterName+"-api")
+			errs.Add(apiFirewallErr)
+			workerFirewall, _, workerFirewallErr := client.Firewall.GetByName(ctx, clusterName+"-worker")
+			errs.Add(workerFirewallErr)
+			if apiFirewall != nil {
+				client.Firewall.Delete(ctx, apiFirewall)
+			}
+			if workerFirewallErr != nil {
+				client.Firewall.Delete(ctx, workerFirewall)
+			}
 			return errs.OrNil()
 		},
 	}

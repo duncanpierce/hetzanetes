@@ -16,9 +16,7 @@ func (errs Errors) Error() string {
 }
 
 func (errs *Errors) Catch(_ *hcloud.Response, err error) {
-	if err != nil {
-		*errs = append(*errs, err)
-	}
+	errs.Add(err)
 }
 
 func (errs Errors) OrNil() error {
@@ -26,4 +24,10 @@ func (errs Errors) OrNil() error {
 		return nil
 	}
 	return errs
+}
+
+func (errs *Errors) Add(err error) {
+	if err != nil {
+		*errs = append(*errs, err)
+	}
 }
