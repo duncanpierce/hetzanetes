@@ -38,7 +38,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				PrivateIpRange:     ipRange.String(),
 				PodIpRange:         "10.42.0.0/16",
 				ServiceIpRange:     "10.43.0.0/16",
-				InstallDirectory:   "/var/run/hetzanetes",
+				InstallDirectory:   "/var/opt/hetzanetes",
 			}
 			cloudInit := tmpl.Template(serverConfig)
 
