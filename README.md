@@ -26,6 +26,7 @@ They are all worth checking out, especially if this project doesn't meet your ne
 * [Hetzner-Kube](https://github.com/xetys/hetzner-kube) - impressive networking setup dates from before Hetzner Cloud had private networks, load balancers and labels. Uses `kubeadm`.
 * [K3sup](https://github.com/alexellis/k3sup) - great way to install Rancher's K3s Kubernetes on a cluster but it doesn't provision the cluster or up a firewall.
 * [Kube-Hetzner](https://github.com/mysticaltech/kube-hetzner) - uses Terraform to set up K3OS
+* [kubernetes-on-hetzner](https://github.com/LWJ/kubernetes-on-hetzner) - uses Terraform
 
 ## How it works
 
