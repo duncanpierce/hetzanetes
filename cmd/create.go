@@ -102,6 +102,14 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			_, _, err = client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
 				Name:  clusterName + "-worker",
 				Rules: firewallRules,
+				ApplyTo: []hcloud.FirewallResource{
+					{
+						Type: hcloud.FirewallResourceTypeLabelSelector,
+						LabelSelector: &hcloud.FirewallResourceLabelSelector{
+							Selector: label.WorkerLabel,
+						},
+					},
+				},
 			})
 			if err != nil {
 				return err
@@ -113,9 +121,17 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
 				Direction: hcloud.FirewallRuleDirectionIn,
 			})
-			apiFirewallCreateResult, _, err := client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
+			_, _, err = client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
 				Name:  clusterName + "-api",
 				Rules: firewallRules,
+				ApplyTo: []hcloud.FirewallResource{
+					{
+						Type: hcloud.FirewallResourceTypeLabelSelector,
+						LabelSelector: &hcloud.FirewallResourceLabelSelector{
+							Selector: label.ApiServerLabel,
+						},
+					},
+				},
 			})
 			if err != nil {
 				return err
@@ -129,7 +145,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 
 			// Hetzner recommend specifying locations rather than datacenters: https://docs.hetzner.cloud/#servers-create-a-server
 			// TODO add --regions option
-			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
+			serverCreateResult, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
 				Name:       clusterName + "-api-1",
 				ServerType: serverType,
 				Image:      image,
@@ -138,14 +154,12 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				UserData:   cloudInit,
 				Labels:     labels.Copy().Mark(label.ApiServerLabel).Mark(label.WorkerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
 				Networks:   []*hcloud.Network{network},
-				Firewalls: []*hcloud.ServerCreateFirewall{
-					{Firewall: *apiFirewallCreateResult.Firewall},
-				},
 			})
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Created server %s in %s\n", server.Server.Name, server.Server.Datacenter.Name)
+			client.Server.Poweron(ctx, serverCreateResult.Server)
+			fmt.Printf("Created server %s in %s\n", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
 
 			return nil
 		},
