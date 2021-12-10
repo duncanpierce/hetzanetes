@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc
+  namespace: kube-system
+spec:
+  storageClassName: hcloud-volumes
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod
+  namespace: kube-system
+spec:
+  containers:
+    - name: main
+      image: hello-world
+      volumeMounts:
+        - mountPath: "/data"
+          name: volume-1
+  volumes:
+    - name: volume-1
+      persistentVolumeClaim:
+        claimName: pvc
