@@ -98,7 +98,6 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 					SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
 					Direction: hcloud.FirewallRuleDirectionIn,
 				},
-				// TODO allow from serverConfig.{PrivateIpRange,PodIpRange,ServiceIpRange}
 			}
 			_, _, err = client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
 				Name:  clusterName + "-worker",
