@@ -32,7 +32,6 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			labels[label.ClusterNameLabel] = clusterName
 
 			serverConfig := tmpl.ClusterConfig{
-				ApiServer:          true,
 				HetznerApiToken:    apiToken,
 				PrivateNetworkName: clusterName,
 				PrivateIpRange:     ipRange.String(),
@@ -40,7 +39,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				ServiceIpRange:     "10.43.0.0/16",
 				InstallDirectory:   "/var/opt/hetzanetes",
 			}
-			cloudInit := tmpl.Template(serverConfig)
+			cloudInit := tmpl.Template(serverConfig, "create.yaml")
 
 			if dryRun {
 				fmt.Printf("Would create server with cloud-init file\n%s\n", cloudInit)
@@ -145,20 +144,21 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 
 			// Hetzner recommend specifying locations rather than datacenters: https://docs.hetzner.cloud/#servers-create-a-server
 			// TODO add --regions option
+			t := true
 			serverCreateResult, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
-				Name:       clusterName + "-api-1",
-				ServerType: serverType,
-				Image:      image,
-				SSHKeys:    sshKeys,
-				Location:   nil,
-				UserData:   cloudInit,
-				Labels:     labels.Copy().Mark(label.ApiServerLabel).Mark(label.WorkerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
-				Networks:   []*hcloud.Network{network},
+				Name:             clusterName + "-api-1",
+				ServerType:       serverType,
+				Image:            image,
+				SSHKeys:          sshKeys,
+				Location:         nil,
+				UserData:         cloudInit,
+				StartAfterCreate: &t,
+				Labels:           labels.Copy().Mark(label.ApiServerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
+				Networks:         []*hcloud.Network{network},
 			})
 			if err != nil {
 				return err
 			}
-			client.Server.Poweron(ctx, serverCreateResult.Server)
 			fmt.Printf("Created server %s in %s\n", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
 
 			return nil

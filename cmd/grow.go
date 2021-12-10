@@ -40,7 +40,7 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			}
 			endpoint, hasEndpoint := network.Labels[label.EndpointLabel]
 			if !hasEndpoint {
-				return errors.New(fmt.Sprintf("network %s does not have Kubernetes API server endpoint label"))
+				return errors.New(fmt.Sprintf("network '%s' does not have Kubernetes API server endpoint label", clusterName))
 			}
 
 			// TODO find next server number instead of hardcoded 1
@@ -48,13 +48,13 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			ipRange := network.Subnets[0].IPRange
 
 			clusterConfig := tmpl.ClusterConfig{
-				ApiServer:          false,
 				ApiEndpoint:        endpoint,
 				HetznerApiToken:    apiToken,
 				PrivateNetworkName: clusterName,
 				PrivateIpRange:     ipRange.String(),
+				JoinToken:          joinToken,
 			}
-			cloudInit := tmpl.Template(clusterConfig)
+			cloudInit := tmpl.Template(clusterConfig, "add-worker.yaml")
 
 			// TODO check for name collisions new server before starting
 
@@ -75,15 +75,17 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 
 			// Hetzner recommend specifying locations rather than datacenters: https://docs.hetzner.cloud/#servers-create-a-server
 			// TODO add --regions option
+			t := true
 			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
-				Name:       nodeName,
-				ServerType: serverType,
-				Image:      image,
-				SSHKeys:    sshKeys,
-				Location:   nil,
-				UserData:   cloudInit,
-				Labels:     labels.Copy().Mark(label.WorkerLabel),
-				Networks:   []*hcloud.Network{network},
+				Name:             nodeName,
+				ServerType:       serverType,
+				Image:            image,
+				SSHKeys:          sshKeys,
+				Location:         nil,
+				StartAfterCreate: &t,
+				UserData:         cloudInit,
+				Labels:           labels.Copy().Mark(label.WorkerLabel),
+				Networks:         []*hcloud.Network{network},
 			})
 			if err != nil {
 				return err
