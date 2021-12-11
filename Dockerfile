@@ -1,9 +1,9 @@
-FROM golang:1.17 as build
+FROM golang:1.17-alpine as build
 WORKDIR /go/src
 ADD . /go/src
 RUN go get -d -v ./...
 RUN go build -v -o /go/bin/hetzanetes
 
-FROM gcr.io/distroless/base-debian10
+FROM alpine
 COPY --from=build /go/bin/hetzanetes /hetzanetes
-ENTRYPOINT ["/hetzanetes", "spike"]
+ENTRYPOINT ["/hetzanetes"]
