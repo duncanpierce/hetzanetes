@@ -1,3 +1,4 @@
 #!/bin/bash
+CGO_ENABLED=0 go build -v -o bin/hetzanetes
 sudo docker build -t duncanpierce/hetzanetes .
 sudo docker push duncanpierce/hetzanetes
