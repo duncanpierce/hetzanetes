@@ -1,0 +1,1 @@
+$(ip -j -4 address list {{template "get-private-interface.sh" .}} | jq -r .[0].addr_info[0].local)

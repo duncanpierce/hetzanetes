@@ -8,6 +8,7 @@ import (
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // TODO this is a temporary command to add a single worker to the cluster
@@ -16,7 +17,6 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 	var labelsMap map[string]string
 	var serverType string
 	var osImage string
-	var joinToken string
 	var nodeSuffix string
 
 	cmd := &cobra.Command{
@@ -38,21 +38,17 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			if !labelled || network.Labels[label.ClusterNameLabel] != clusterName {
 				return errors.New(fmt.Sprintf("network %s is not labelled as a cluster", network.Name))
 			}
-			endpoint, hasEndpoint := network.Labels[label.EndpointLabel]
-			if !hasEndpoint {
-				return errors.New(fmt.Sprintf("network '%s' does not have Kubernetes API server endpoint label", clusterName))
-			}
 
 			// TODO find next server number instead of hardcoded 1
 			nodeName := clusterName + "-worker-" + nodeSuffix
 			ipRange := network.Subnets[0].IPRange
 
 			clusterConfig := tmpl.ClusterConfig{
-				ApiEndpoint:        endpoint,
-				HetznerApiToken:    apiToken,
+				JoinToken:          os.Getenv("K3S_TOKEN"),
+				ApiEndpoint:        os.Getenv("K3S_URL"),
+				HetznerApiToken:    apiToken, // from HCLOUD_TOKEN
 				PrivateNetworkName: clusterName,
 				PrivateIpRange:     ipRange.String(),
-				JoinToken:          joinToken,
 			}
 			cloudInit := tmpl.Template(clusterConfig, "add-worker.yaml")
 
@@ -97,8 +93,6 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 	}
 	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
 	cmd.MarkFlagRequired("name")
-	cmd.Flags().StringVar(&joinToken, "join-token", "", "Join token provided by first API server")
-	cmd.MarkFlagRequired("join-token")
 	cmd.Flags().StringVar(&nodeSuffix, "node-suffix", "1", "Final component of new node name - must be unique within cluster")
 	cmd.Flags().StringToStringVar(&labelsMap, "label", map[string]string{}, "User-defined labels ('key=value') (can be specified multiple times)")
 	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")

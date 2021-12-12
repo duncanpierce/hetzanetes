@@ -38,6 +38,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				PodIpRange:         "10.42.0.0/16",
 				ServiceIpRange:     "10.43.0.0/16",
 				InstallDirectory:   "/var/opt/hetzanetes",
+				ServerType:         serverType,
 			}
 			cloudInit := tmpl.Template(serverConfig, "create.yaml")
 

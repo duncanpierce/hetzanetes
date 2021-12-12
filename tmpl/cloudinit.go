@@ -19,6 +19,7 @@ type ClusterConfig struct {
 	ServiceIpRange     string
 	InstallDirectory   string
 	JoinToken          string
+	ServerType         string
 	// TODO add Version map[string]string and emit versions in files unless the key is missing
 }
 
