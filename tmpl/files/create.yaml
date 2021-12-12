@@ -16,6 +16,7 @@ write_files:
       resources:
         - hetzner-ccm.yaml
         - hetzner-csi.yaml
+        - add-worker-1.yaml
       patches:
         - patch.yaml
   - path: "{{.InstallDirectory}}/patch.yaml"
@@ -37,6 +38,24 @@ write_files:
                   - "--allow-untagged-cloud"
                   - "--allocate-node-cidrs=true"
                   - "--cluster-cidr={{.PodIpRange}}"
+  - path: "{{.InstallDirectory}}/add-worker-1.yaml"
+    content: |
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: add-worker-1
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: add-worker
+                image: duncanpierce/hetzanetes
+                command: ["/hetzanetes",  "grow", "--server-type=cx11", "--node-suffix=1"]
+                envFrom:
+                  - secretRef:
+                      name: hetzanetes
 runcmd:
   - curl -sfL 'https://get.k3s.io' | sh -s - server --cluster-init --disable servicelb --disable local-storage --disable-cloud-controller --kubelet-arg cloud-provider=external --flannel-iface={{template "get-private-interface.sh" .}}
   - kubectl create secret generic hetzanetes -n kube-system --from-literal=HCLOUD_TOKEN={{.HetznerApiToken}} --from-literal=HCLOUD_NETWORK={{.PrivateNetworkName}} --from-file=K3S_TOKEN=/var/lib/rancher/k3s/server/token --from-literal=K3S_URL="https://{{template "get-private-ip-address.sh" .}}:6443"
