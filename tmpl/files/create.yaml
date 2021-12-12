@@ -1,11 +1,4 @@
-#cloud-config
-
-package_update: true
-package_upgrade: true
-packages:
-  - "curl"
-  - "jq"
-package_reboot_if_required: true
+{{template "update-packages.yaml" .}}
 bootcmd:
   - "mkdir {{.InstallDirectory}}"
 write_files:
@@ -17,6 +10,8 @@ write_files:
         - hetzner-ccm.yaml
         - hetzner-csi.yaml
         - add-worker-1.yaml
+        - add-api-server-2.yaml
+        - add-api-server-3.yaml
       patches:
         - patch.yaml
   - path: "{{.InstallDirectory}}/patch.yaml"
@@ -53,6 +48,42 @@ write_files:
               - name: add-worker
                 image: duncanpierce/hetzanetes
                 command: ["/hetzanetes",  "grow", "--server-type=cx11", "--node-suffix=1"]
+                envFrom:
+                  - secretRef:
+                      name: hetzanetes
+  - path: "{{.InstallDirectory}}/add-api-server-2.yaml"
+    content: |
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: add-api-server-2
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: add-worker
+                image: duncanpierce/hetzanetes
+                command: ["/hetzanetes",  "grow", "--server-type=cx11", "--api-server=true", "--node-suffix=2"]
+                envFrom:
+                  - secretRef:
+                      name: hetzanetes
+  - path: "{{.InstallDirectory}}/add-api-server-3.yaml"
+    content: |
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: add-api-server-3
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: add-worker
+                image: duncanpierce/hetzanetes
+                command: ["/hetzanetes",  "grow", "--server-type=cx11", "--api-server=true", "--node-suffix=3"]
                 envFrom:
                   - secretRef:
                       name: hetzanetes

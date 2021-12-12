@@ -17,6 +17,7 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 	var serverType string
 	var osImage string
 	var nodeSuffix string
+	var addApiServer bool
 
 	cmd := &cobra.Command{
 		Use:              "grow [FLAGS]",
@@ -40,7 +41,11 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			}
 
 			// TODO find next server number instead of hardcoded 1
-			nodeName := clusterName + "-worker-" + nodeSuffix
+			nodeKind := "-worker-"
+			if addApiServer {
+				nodeKind = "-api-"
+			}
+			nodeName := clusterName + nodeKind + nodeSuffix
 			ipRange := network.Subnets[0].IPRange
 
 			clusterConfig := tmpl.ClusterConfig{
@@ -50,7 +55,11 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 				PrivateNetworkName: clusterName, // from HCLOUD_NETWORK
 				PrivateIpRange:     ipRange.String(),
 			}
-			cloudInit := tmpl.Template(clusterConfig, "add-worker.yaml")
+			templateToUse := "add-worker.yaml"
+			if addApiServer {
+				templateToUse = "add-api-server.yaml"
+			}
+			cloudInit := tmpl.Template(clusterConfig, templateToUse)
 
 			// TODO check for name collisions new server before starting
 
@@ -72,6 +81,10 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			// Hetzner recommend specifying locations rather than datacenters: https://docs.hetzner.cloud/#servers-create-a-server
 			// TODO add --regions option
 			t := true
+			labelToUse := label.WorkerLabel
+			if addApiServer {
+				labelToUse = label.ApiServerLabel
+			}
 			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
 				Name:             nodeName,
 				ServerType:       serverType,
@@ -80,7 +93,7 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 				Location:         nil,
 				StartAfterCreate: &t,
 				UserData:         cloudInit,
-				Labels:           labels.Copy().Mark(label.WorkerLabel),
+				Labels:           labels.Copy().Mark(labelToUse),
 				Networks:         []*hcloud.Network{network},
 			})
 			if err != nil {
@@ -91,6 +104,7 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&addApiServer, "api-server", false, "Whether to add an API server or a worker")
 	cmd.Flags().StringVar(&nodeSuffix, "node-suffix", "1", "Final component of new node name - must be unique within cluster")
 	cmd.Flags().StringToStringVar(&labelsMap, "label", map[string]string{}, "User-defined labels ('key=value') (can be specified multiple times)")
 	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")
