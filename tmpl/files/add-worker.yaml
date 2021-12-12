@@ -7,4 +7,4 @@ packages:
   - "jq"
 package_reboot_if_required: true
 runcmd:
-  - "curl -sfL 'https://get.k3s.io' | K3S_URL=https://{{.ApiEndpoint}}:6443 K3S_TOKEN={{.JoinToken}} sh -s - --kubelet-arg cloud-provider=external --flannel-iface={{template "get-private-interface.sh" .}}"
+  - "curl -sfL 'https://get.k3s.io' | K3S_URL={{.ApiEndpoint}} K3S_TOKEN={{.JoinToken}} sh -s - --kubelet-arg cloud-provider=external --flannel-iface={{template "get-private-interface.sh" .}}"

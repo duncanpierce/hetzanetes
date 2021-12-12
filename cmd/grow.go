@@ -13,7 +13,6 @@ import (
 
 // TODO this is a temporary command to add a single worker to the cluster
 func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Command {
-	var clusterName string
 	var labelsMap map[string]string
 	var serverType string
 	var osImage string
@@ -27,6 +26,7 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			clusterName := os.Getenv("HCLOUD_NETWORK")
 			var labels label.Labels = labelsMap
 			labels[label.ClusterNameLabel] = clusterName
 
@@ -46,8 +46,8 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			clusterConfig := tmpl.ClusterConfig{
 				JoinToken:          os.Getenv("K3S_TOKEN"),
 				ApiEndpoint:        os.Getenv("K3S_URL"),
-				HetznerApiToken:    apiToken, // from HCLOUD_TOKEN
-				PrivateNetworkName: clusterName,
+				HetznerApiToken:    apiToken,    // from HCLOUD_TOKEN
+				PrivateNetworkName: clusterName, // from HCLOUD_NETWORK
 				PrivateIpRange:     ipRange.String(),
 			}
 			cloudInit := tmpl.Template(clusterConfig, "add-worker.yaml")
@@ -91,8 +91,6 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
-	cmd.MarkFlagRequired("name")
 	cmd.Flags().StringVar(&nodeSuffix, "node-suffix", "1", "Final component of new node name - must be unique within cluster")
 	cmd.Flags().StringToStringVar(&labelsMap, "label", map[string]string{}, "User-defined labels ('key=value') (can be specified multiple times)")
 	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")
