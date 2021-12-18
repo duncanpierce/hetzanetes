@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/duncanpierce/hetzanetes/cmd"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -14,8 +15,10 @@ func main() {
 	if hcloudToken == "" {
 		panic("Environment variable HCLOUD_TOKEN must contain a Hetzner Cloud API token")
 	}
-	client := hcloud.NewClient(hcloud.WithToken(hcloudToken))
-	ctx := context.Background()
+	c := client.Client{
+		Client:  hcloud.NewClient(hcloud.WithToken(hcloudToken)),
+		Context: context.Background(),
+	}
 
 	var defaultCmd = &cobra.Command{
 		Use: label.AppName,
@@ -27,12 +30,12 @@ func main() {
 	// TODO work out how to read cluster name from command line without using a --flag
 	// TODO need to be able to pass a --context arg
 	defaultCmd.AddCommand(
-		cmd.List(client, ctx),
-		cmd.Create(client, ctx, hcloudToken),
-		cmd.Grow(client, ctx, hcloudToken),
-		cmd.Delete(client, ctx),
-		cmd.Repair(client, ctx),
-		cmd.Spike(ctx),
+		cmd.List(c.Client, c.Context),
+		cmd.Create(c, hcloudToken),
+		cmd.Grow(c.Client, c.Context, hcloudToken),
+		cmd.Delete(c.Client, c.Context),
+		cmd.Repair(c.Client, c.Context),
+		cmd.Spike(c.Context),
 	)
 	// TODO it would be nice to add hetzner CLI's 'context' command here, since we share the context, but it's package-private
 	// TODO implement "repair" which scans the cluster and recreates resources that are missing, according to the cluster manifest - this would be run as a cronjob in the cluster

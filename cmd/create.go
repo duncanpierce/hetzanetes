@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/catch"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -13,7 +12,7 @@ import (
 
 // TODO add options to --protected, --backups to enable protection and backups
 // TODO maybe protected should be the default
-func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Command {
+func Create(c client.Client, apiToken string) *cobra.Command {
 	var dryRun bool
 	var clusterName string
 	var ipRange net.IPNet
@@ -62,7 +61,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 
 			// TODO protect this network - it could be difficult to repair if deleted (e.g. server gets a new interface flannel doesn't know about)
 			networkLabels := labels.Copy().Mark(label.PrivateNetworkLabel)
-			network, _, err := client.Network.Create(ctx, hcloud.NetworkCreateOpts{
+			network, _, err := c.Network.Create(c, hcloud.NetworkCreateOpts{
 				Name:    clusterName,
 				IPRange: &ipRange,
 				Subnets: subnets,
@@ -74,11 +73,11 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			}
 			fmt.Printf("Created network %s (%s)\n", network.Name, network.IPRange.String())
 
-			serverType, _, err := client.ServerType.GetByName(ctx, serverType)
+			serverType, _, err := c.ServerType.GetByName(c, serverType)
 			if err != nil {
 				return err
 			}
-			image, _, err := client.Image.GetByName(ctx, osImage)
+			image, _, err := c.Image.GetByName(c, osImage)
 			if err != nil {
 				return err
 			}
@@ -100,7 +99,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 					Direction: hcloud.FirewallRuleDirectionIn,
 				},
 			}
-			_, _, err = client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
+			_, _, err = c.Firewall.Create(c, hcloud.FirewallCreateOpts{
 				Name:  clusterName + "-worker",
 				Rules: firewallRules,
 				ApplyTo: []hcloud.FirewallResource{
@@ -122,7 +121,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				SourceIPs: []net.IPNet{*allIPv4, *allIPv6},
 				Direction: hcloud.FirewallRuleDirectionIn,
 			})
-			_, _, err = client.Firewall.Create(ctx, hcloud.FirewallCreateOpts{
+			_, _, err = c.Firewall.Create(c, hcloud.FirewallCreateOpts{
 				Name:  clusterName + "-api",
 				Rules: firewallRules,
 				ApplyTo: []hcloud.FirewallResource{
@@ -139,7 +138,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			}
 
 			// TODO allow a label selector to select keys to use (repair will keep it up to date)
-			sshKeys, err := client.SSHKey.All(ctx)
+			sshKeys, err := c.SSHKey.All(c)
 			if err != nil {
 				return err
 			}
@@ -147,7 +146,7 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			// Hetzner recommend specifying locations rather than datacenters: https://docs.hetzner.cloud/#servers-create-a-server
 			// TODO add --regions option
 			t := true
-			serverCreateResult, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
+			serverCreateResult, _, err := c.Server.Create(c, hcloud.ServerCreateOpts{
 				Name:             clusterName + "-api-1",
 				ServerType:       serverType,
 				Image:            image,
@@ -164,8 +163,8 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 			fmt.Printf("Creating server %s in %s...", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
 
 			// Attach network after creating server at suggestion of Hetzner support to avoid server being powered off
-			err = catch.Await(client, ctx, serverCreateResult.Action)
-			_, _, err = client.Server.AttachToNetwork(ctx, serverCreateResult.Server, hcloud.ServerAttachToNetworkOpts{
+			err = c.Await(serverCreateResult.Action)
+			_, _, err = c.Server.AttachToNetwork(c, serverCreateResult.Server, hcloud.ServerAttachToNetworkOpts{
 				Network: network,
 			})
 
