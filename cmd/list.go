@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 )
 
-func List(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func List(c client.Client) *cobra.Command {
 	showAll := false
 	var verbose bool
 
@@ -20,7 +20,7 @@ func List(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// TODO use NetworkListOpts with a label rather than filtering client-side
-			networks, _, _ := client.Network.List(ctx, hcloud.NetworkListOpts{})
+			networks, _, _ := c.Network.List(c, hcloud.NetworkListOpts{})
 			for _, network := range networks {
 				_, labelled := network.Labels[label.PrivateNetworkLabel]
 				if labelled || showAll {
@@ -31,7 +31,7 @@ func List(client *hcloud.Client, ctx context.Context) *cobra.Command {
 							fmt.Printf("  %s subnet, %s zone, ip-range %v, gateway %v\n", subnet.Type, subnet.NetworkZone, subnet.IPRange, subnet.Gateway)
 						}
 						for _, server := range network.Servers {
-							server, _, err := client.Server.GetByID(ctx, server.ID)
+							server, _, err := c.Server.GetByID(c, server.ID)
 							if err != nil {
 								return err
 							}

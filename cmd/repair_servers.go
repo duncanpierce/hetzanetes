@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 )
 
-func RepairServers(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func RepairServers(c client.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "servers",
 		Short: "Creates missing servers and reboots those that need it",

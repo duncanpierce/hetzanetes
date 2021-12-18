@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 )
 
-func RepairPackages(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func RepairPackages(c client.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "packages",
 		Short:            "Bring system software packages up to date", // TODO could be done by unattended-upgrades (or might fight with it), could also update Kubernetes distro

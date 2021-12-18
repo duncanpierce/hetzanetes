@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 )
 
-func RepairFirewall(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func RepairFirewall(c client.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "firewall",
 		Short:            "Bring firewall on all servers up to date with cluster configuration",

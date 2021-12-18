@@ -1,16 +1,16 @@
 package cmd
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/catch"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 )
 
-func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func Delete(c client.Client) *cobra.Command {
 	var clusterName string
 
 	cmd := &cobra.Command{
@@ -21,7 +21,7 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			network, _, err := client.Network.GetByName(ctx, clusterName)
+			network, _, err := c.Network.GetByName(c, clusterName)
 			if err != nil {
 				return err
 			}
@@ -31,7 +31,7 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 			if _, labelled := network.Labels[label.PrivateNetworkLabel]; !labelled {
 				return errors.New(fmt.Sprintf("private network %s does not have %s label", clusterName, label.PrivateNetworkLabel))
 			}
-			labelledServers, err := getServers(client, ctx, clusterName, *network)
+			labelledServers, err := getServers(c, clusterName, *network)
 			if err != nil {
 				return err
 			}
@@ -45,22 +45,22 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 			errs := catch.Errors{}
 			for _, server := range labelledServers {
 				// TODO retry if deletion fails?
-				errs.Catch(client.Server.Delete(ctx, server))
+				errs.Catch(c.Server.Delete(c, server))
 			}
 			if len(errs) == 0 {
-				errs.Catch(client.Network.Delete(ctx, network))
+				errs.Catch(c.Network.Delete(c, network))
 			}
 
-			apiFirewall, _, apiFirewallErr := client.Firewall.GetByName(ctx, clusterName+"-api")
+			apiFirewall, _, apiFirewallErr := c.Firewall.GetByName(c, clusterName+"-api")
 			errs.Add(apiFirewallErr)
-			workerFirewall, _, workerFirewallErr := client.Firewall.GetByName(ctx, clusterName+"-worker")
+			workerFirewall, _, workerFirewallErr := c.Firewall.GetByName(c, clusterName+"-worker")
 			errs.Add(workerFirewallErr)
 			if apiFirewallErr == nil {
-				_, err = client.Firewall.Delete(ctx, apiFirewall)
+				_, err = c.Firewall.Delete(c, apiFirewall)
 				errs.Add(err)
 			}
 			if workerFirewallErr == nil {
-				_, err = client.Firewall.Delete(ctx, workerFirewall)
+				_, err = c.Firewall.Delete(c, workerFirewall)
 				errs.Add(err)
 			}
 			return errs.OrNil()
@@ -72,8 +72,8 @@ func Delete(client *hcloud.Client, ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func getServers(client *hcloud.Client, ctx context.Context, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
-	servers, err := client.Server.AllWithOpts(ctx, hcloud.ServerListOpts{
+func getServers(c client.Client, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
+	servers, err := c.Server.AllWithOpts(c, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: label.ClusterNameLabel + "=" + clusterName,
 		},

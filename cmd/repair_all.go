@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 )
 
-func RepairAll(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func RepairAll(c client.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "all",
 		Short:            "Scan cluster and repair any problems found",

@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -12,7 +12,7 @@ import (
 )
 
 // TODO this is a temporary command to add a single worker to the cluster
-func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Command {
+func Grow(c client.Client, apiToken string) *cobra.Command {
 	var labelsMap map[string]string
 	var serverType string
 	var osImage string
@@ -31,7 +31,7 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			var labels label.Labels = labelsMap
 			labels[label.ClusterNameLabel] = clusterName
 
-			network, _, err := client.Network.GetByName(ctx, clusterName)
+			network, _, err := c.Network.GetByName(c, clusterName)
 			if err != nil {
 				return err
 			}
@@ -63,17 +63,17 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 
 			// TODO check for name collisions new server before starting
 
-			serverType, _, err := client.ServerType.GetByName(ctx, serverType)
+			serverType, _, err := c.ServerType.GetByName(c, serverType)
 			if err != nil {
 				return err
 			}
-			image, _, err := client.Image.GetByName(ctx, osImage)
+			image, _, err := c.Image.GetByName(c, osImage)
 			if err != nil {
 				return err
 			}
 
 			// TODO allow a label selector to select keys to use (repair will keep it up to date)
-			sshKeys, err := client.SSHKey.All(ctx)
+			sshKeys, err := c.SSHKey.All(c)
 			if err != nil {
 				return err
 			}
@@ -85,7 +85,7 @@ func Grow(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.Co
 			if addApiServer {
 				labelToUse = label.ApiServerLabel
 			}
-			server, _, err := client.Server.Create(ctx, hcloud.ServerCreateOpts{
+			server, _, err := c.Server.Create(c, hcloud.ServerCreateOpts{
 				Name:             nodeName,
 				ServerType:       serverType,
 				Image:            image,

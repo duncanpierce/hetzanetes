@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 )
 
-func RepairNetwork(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func RepairNetwork(c client.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "network",
 		Short: "Bring private network up to date with cluster configuration",

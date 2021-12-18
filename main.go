@@ -30,12 +30,12 @@ func main() {
 	// TODO work out how to read cluster name from command line without using a --flag
 	// TODO need to be able to pass a --context arg
 	defaultCmd.AddCommand(
-		cmd.List(c.Client, c.Context),
+		cmd.List(c),
 		cmd.Create(c, hcloudToken),
-		cmd.Grow(c.Client, c.Context, hcloudToken),
-		cmd.Delete(c.Client, c.Context),
-		cmd.Repair(c.Client, c.Context),
-		cmd.Spike(c.Context),
+		cmd.Grow(c, hcloudToken),
+		cmd.Delete(c),
+		cmd.Repair(c),
+		cmd.Spike(c),
 	)
 	// TODO it would be nice to add hetzner CLI's 'context' command here, since we share the context, but it's package-private
 	// TODO implement "repair" which scans the cluster and recreates resources that are missing, according to the cluster manifest - this would be run as a cronjob in the cluster

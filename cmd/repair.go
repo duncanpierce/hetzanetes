@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"context"
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +12,7 @@ import (
 // repair all scans the cluster and Hetzner's API to reconcile discrepancies
 // TODO consider how to use and check for hcloud.Actions concerning a resource that are still in progress - to avoid duplicating something already started
 
-func Repair(client *hcloud.Client, ctx context.Context) *cobra.Command {
+func Repair(c client.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "repair",
 		Short:            "Commands for repairing a cluster",
@@ -25,12 +24,12 @@ func Repair(client *hcloud.Client, ctx context.Context) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(
-		RepairAll(client, ctx),
-		RepairSsh(client, ctx),
-		RepairFirewall(client, ctx),
-		RepairNetwork(client, ctx),
-		RepairServers(client, ctx),
-		RepairPackages(client, ctx),
+		RepairAll(c),
+		RepairSsh(c),
+		RepairFirewall(c),
+		RepairNetwork(c),
+		RepairServers(c),
+		RepairPackages(c),
 	)
 	return cmd
 }
