@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/catch"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -155,14 +156,20 @@ func Create(client *hcloud.Client, ctx context.Context, apiToken string) *cobra.
 				UserData:         cloudInit,
 				StartAfterCreate: &t,
 				Labels:           labels.Copy().Mark(label.ApiServerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
-				Networks:         []*hcloud.Network{network},
+				//Networks:         []*hcloud.Network{network},
 			})
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Created server %s in %s\n", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
+			fmt.Printf("Creating server %s in %s...", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
 
-			return nil
+			// Attach network after creating server at suggestion of Hetzner support to avoid server being powered off
+			err = catch.Await(client, ctx, serverCreateResult.Action)
+			_, _, err = client.Server.AttachToNetwork(ctx, serverCreateResult.Server, hcloud.ServerAttachToNetworkOpts{
+				Network: network,
+			})
+
+			return err
 		},
 	}
 	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
