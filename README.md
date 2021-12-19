@@ -19,7 +19,8 @@ Right now, it can only provision a single server with K3s Kubernetes. The aim is
 
 ## Alternatives
 
-I wanted a simple way to create and manage Kubernetes clusters on Hetzner Cloud. There are really good projects out there but none of them quite did what I wanted (as of 2020-09-19).
+I wanted a simple way to create and manage Kubernetes clusters on Hetzner Cloud, and I wanted to be able to manage
+and repair the cluster from within. There are really good projects out there but none of them quite did what I wanted (as of 2020-09-19).
 They are all worth checking out, especially if this project doesn't meet your needs.
 
 * [Pharmer](https://github.com/pharmer/pharmer) - loads of features but doesn't support Hetzner Cloud.
@@ -27,6 +28,7 @@ They are all worth checking out, especially if this project doesn't meet your ne
 * [K3sup](https://github.com/alexellis/k3sup) - great way to install Rancher's K3s Kubernetes on a cluster but it doesn't provision the cluster or up a firewall.
 * [Kube-Hetzner](https://github.com/mysticaltech/kube-hetzner) - uses Terraform to set up K3OS
 * [kubernetes-on-hetzner](https://github.com/LWJ/kubernetes-on-hetzner) - uses Terraform
+* [hetzner-k3s](https://github.com/vitobotta/hetzner-k3s) - Vito Botta's more recent project - very complete but manages the cluster from outside
 
 ## How it works
 
