@@ -155,20 +155,13 @@ func Create(c client.Client, apiToken string) *cobra.Command {
 				UserData:         cloudInit,
 				StartAfterCreate: &t,
 				Labels:           labels.Copy().Mark(label.ApiServerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
-				//Networks:         []*hcloud.Network{network},
+				Networks:         []*hcloud.Network{network},
 			})
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Creating server %s in %s...", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
-
-			// Attach network after creating server at suggestion of Hetzner support to avoid server being powered off
-			err = c.Await(serverCreateResult.Action)
-			_, _, err = c.Server.AttachToNetwork(c, serverCreateResult.Server, hcloud.ServerAttachToNetworkOpts{
-				Network: network,
-			})
-
-			return err
+			fmt.Printf("Creating server %s in %s...\n", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
+			return c.Await(serverCreateResult.Action)
 		},
 	}
 	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")

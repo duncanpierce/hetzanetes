@@ -47,7 +47,7 @@ write_files:
             containers:
               - name: add-worker
                 image: duncanpierce/hetzanetes
-                command: ["/hetzanetes",  "grow", "--server-type=cx11", "--node-suffix=1"]
+                command: ["/hetzanetes", "internal", "grow", "--server-type=cx11", "--node-suffix=1"]
                 envFrom:
                   - secretRef:
                       name: hetzanetes
@@ -65,7 +65,7 @@ write_files:
             containers:
               - name: add-worker
                 image: duncanpierce/hetzanetes
-                command: ["/hetzanetes",  "grow", "--server-type=cx11", "--api-server=true", "--node-suffix=2"]
+                command: ["/hetzanetes", "internal", "grow", "--server-type=cx11", "--api-server=true", "--node-suffix=2"]
                 envFrom:
                   - secretRef:
                       name: hetzanetes
@@ -83,7 +83,7 @@ write_files:
             containers:
               - name: add-worker
                 image: duncanpierce/hetzanetes
-                command: ["/hetzanetes",  "grow", "--server-type=cx11", "--api-server=true", "--node-suffix=3"]
+                command: ["/hetzanetes", "internal", "grow", "--server-type=cx11", "--api-server=true", "--node-suffix=3"]
                 envFrom:
                   - secretRef:
                       name: hetzanetes

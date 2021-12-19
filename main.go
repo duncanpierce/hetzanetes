@@ -32,10 +32,8 @@ func main() {
 	defaultCmd.AddCommand(
 		cmd.List(c),
 		cmd.Create(c, hcloudToken),
-		cmd.Grow(c, hcloudToken),
 		cmd.Delete(c),
-		cmd.Repair(c),
-		cmd.Spike(c),
+		cmd.Internal(c, hcloudToken),
 	)
 	// TODO it would be nice to add hetzner CLI's 'context' command here, since we share the context, but it's package-private
 	// TODO implement "repair" which scans the cluster and recreates resources that are missing, according to the cluster manifest - this would be run as a cronjob in the cluster
