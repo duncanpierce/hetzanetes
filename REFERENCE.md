@@ -16,3 +16,9 @@ HETZNER CCM:
 
 * https://github.com/hetznercloud/hcloud-cloud-controller-manager/blob/master/internal/hcops/load_balancer.go
 * https://pkg.go.dev/github.com/hetznercloud/hcloud-cloud-controller-manager/internal/annotation#Name
+
+UPGRADES
+
+* https://wiki.debian.org/UnattendedUpgrades
+  * `APT::Periodic::Update-Package-Lists "1";` in `/etc/apt/apt.conf.d/02periodic`
+* https://www.linuxcapable.com/how-to-setup-configure-unattended-upgrades-on-ubuntu-20-04/ 
