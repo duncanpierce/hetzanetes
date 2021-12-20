@@ -89,6 +89,7 @@ func Create() *cobra.Command {
 			_, allIPv6, _ := net.ParseCIDR("::/0")
 			sshPort := "22"
 			k3sApiPort := "6443"
+			clusterSelector := label.ClusterNameLabel + "==" + clusterName
 			firewallRules := []hcloud.FirewallRule{
 				{
 					Protocol:  hcloud.FirewallRuleProtocolICMP,
@@ -109,7 +110,7 @@ func Create() *cobra.Command {
 					{
 						Type: hcloud.FirewallResourceTypeLabelSelector,
 						LabelSelector: &hcloud.FirewallResourceLabelSelector{
-							Selector: label.WorkerLabel,
+							Selector: clusterSelector + "," + label.WorkerLabel,
 						},
 					},
 				},
@@ -131,7 +132,7 @@ func Create() *cobra.Command {
 					{
 						Type: hcloud.FirewallResourceTypeLabelSelector,
 						LabelSelector: &hcloud.FirewallResourceLabelSelector{
-							Selector: label.ApiServerLabel,
+							Selector: clusterSelector + "," + label.ApiServerLabel,
 						},
 					},
 				},
