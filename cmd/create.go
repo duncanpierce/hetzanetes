@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/client"
+	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -12,7 +13,7 @@ import (
 
 // TODO add options to --protected, --backups to enable protection and backups
 // TODO maybe protected should be the default
-func Create(c client.Client, apiToken string) *cobra.Command {
+func Create() *cobra.Command {
 	var dryRun bool
 	var clusterName string
 	var ipRange net.IPNet
@@ -28,19 +29,21 @@ func Create(c client.Client, apiToken string) *cobra.Command {
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			c := client.New()
+			apiToken := env.HCloudToken()
 			var labels label.Labels = labelsMap
 			labels[label.ClusterNameLabel] = clusterName
 
 			serverConfig := tmpl.ClusterConfig{
-				HetznerApiToken:    apiToken,
-				PrivateNetworkName: clusterName,
-				PrivateIpRange:     ipRange.String(),
-				PodIpRange:         "10.42.0.0/16",
-				ServiceIpRange:     "10.43.0.0/16",
-				InstallDirectory:   "/var/opt/hetzanetes",
-				ServerType:         serverType,
+				HetznerApiToken:  apiToken,
+				ClusterName:      clusterName,
+				PrivateIpRange:   ipRange.String(),
+				PodIpRange:       "10.42.0.0/16",
+				ServiceIpRange:   "10.43.0.0/16",
+				InstallDirectory: "/var/opt/hetzanetes",
+				ServerType:       serverType,
 			}
-			cloudInit := tmpl.Template(serverConfig, "create.yaml")
+			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
 
 			if dryRun {
 				fmt.Printf("Would create server with cloud-init file\n%s\n", cloudInit)

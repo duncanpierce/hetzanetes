@@ -1,0 +1,46 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: clusters.hetzanetes.duncanpierce.org
+spec:
+  group: hetzanetes.duncanpierce.org
+  names:
+    plural: clusters
+    singular: cluster
+    kind: Cluster
+  scope: Cluster
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                channel:
+                  type: string
+                nodeSets:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      apiServer:
+                        type: boolean
+                      nodeType:
+                        type: string
+                      replicas:
+                        type: integer
+                        minimum: 0
+                      locations:
+                        type: array
+                        items:
+                          type: string
+                      labels:
+                        type: object
+      subresources:
+        status: {}

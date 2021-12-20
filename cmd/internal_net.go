@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 	"net"
 )
 
-func Net(c client.Client) *cobra.Command {
+func Net() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "net",
 		Short: "List network interfaces",

@@ -8,12 +8,13 @@ import (
 	"time"
 )
 
-func Watch(c client.Client) *cobra.Command {
+func Watch() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "watch",
 		Short: "Watch actions in Hetzner API",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			c := client.New()
 			ticker := time.NewTicker(1 * time.Second)
 			for {
 				actions, _, err := c.Action.List(c, hcloud.ActionListOpts{

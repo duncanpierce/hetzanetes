@@ -5,4 +5,5 @@ package_upgrade: true
 packages:
   - "curl"
   - "jq"
+  - "docker.io"
 package_reboot_if_required: true

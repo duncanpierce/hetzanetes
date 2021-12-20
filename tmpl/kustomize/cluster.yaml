@@ -1,0 +1,21 @@
+apiVersion: hetzanetes.duncanpierce.org/v1
+kind: Cluster
+metadata:
+  name: "{{.ClusterName}}"
+spec:
+  channel: stable
+  nodeSets:
+    - name: api
+      apiServer: true
+      nodeType: cx11
+      replicas: 3
+      locations:
+        - hel1
+      labels:
+        role: api-server
+    - name: worker
+      nodeType: cx21
+      replicas: 2
+      locations:
+        - hel1
+        - fsn1

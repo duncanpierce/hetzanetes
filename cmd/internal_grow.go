@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/client"
+	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -12,7 +13,7 @@ import (
 )
 
 // TODO this is a temporary command to add a single worker to the cluster
-func Grow(c client.Client, apiToken string) *cobra.Command {
+func Grow() *cobra.Command {
 	var labelsMap map[string]string
 	var serverType string
 	var osImage string
@@ -27,7 +28,9 @@ func Grow(c client.Client, apiToken string) *cobra.Command {
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			clusterName := os.Getenv("HCLOUD_NETWORK")
+			c := client.New()
+			apiToken := env.HCloudToken()
+			clusterName := env.HCloudNetwork()
 			var labels label.Labels = labelsMap
 			labels[label.ClusterNameLabel] = clusterName
 
@@ -49,17 +52,17 @@ func Grow(c client.Client, apiToken string) *cobra.Command {
 			ipRange := network.Subnets[0].IPRange
 
 			clusterConfig := tmpl.ClusterConfig{
-				JoinToken:          os.Getenv("K3S_TOKEN"),
-				ApiEndpoint:        os.Getenv("K3S_URL"),
-				HetznerApiToken:    apiToken,    // from HCLOUD_TOKEN
-				PrivateNetworkName: clusterName, // from HCLOUD_NETWORK
-				PrivateIpRange:     ipRange.String(),
+				JoinToken:       os.Getenv("K3S_TOKEN"),
+				ApiEndpoint:     os.Getenv("K3S_URL"),
+				HetznerApiToken: apiToken,    // from HCLOUD_TOKEN
+				ClusterName:     clusterName, // from HCLOUD_NETWORK
+				PrivateIpRange:  ipRange.String(),
 			}
 			templateToUse := "add-worker.yaml"
 			if addApiServer {
 				templateToUse = "add-api-server.yaml"
 			}
-			cloudInit := tmpl.Template(clusterConfig, templateToUse)
+			cloudInit := tmpl.Cloudinit(clusterConfig, templateToUse)
 
 			// TODO check for name collisions new server before starting
 

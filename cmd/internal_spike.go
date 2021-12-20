@@ -14,13 +14,14 @@ import (
 // Temporary command to explore communication with the Kubernetes API from within the cluster
 // This will be removed in future
 
-func Spike(ctx context.Context) *cobra.Command {
+func Spike() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "spike",
 		Short:   "Temporary in-cluster exploratory tool",
 		Long:    "Temporary in-cluster exploratory tool",
 		Example: "  hetzanetes spike",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
 			config, err := rest.InClusterConfig()
 			if err != nil {
 				return err

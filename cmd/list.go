@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func List(c client.Client) *cobra.Command {
+func List() *cobra.Command {
 	showAll := false
 	var verbose bool
 
@@ -19,6 +19,7 @@ func List(c client.Client) *cobra.Command {
 		Example: `  hetzanetes list`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			c := client.New()
 			// TODO use NetworkListOpts with a label rather than filtering client-side
 			networks, _, _ := c.Network.List(c, hcloud.NetworkListOpts{})
 			for _, network := range networks {

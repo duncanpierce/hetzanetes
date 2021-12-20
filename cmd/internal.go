@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/spf13/cobra"
 )
 
-func Internal(c client.Client, hcloudToken string) *cobra.Command {
+func Internal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "internal",
 		Short:            "Commands for Hetzanetes internal use",
@@ -15,10 +14,11 @@ func Internal(c client.Client, hcloudToken string) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(
-		Grow(c, hcloudToken),
-		Spike(c),
-		Net(c),
-		Watch(c),
+		Kustomize(),
+		Grow(),
+		Spike(),
+		Net(),
+		Watch(),
 	)
 	return cmd
 }

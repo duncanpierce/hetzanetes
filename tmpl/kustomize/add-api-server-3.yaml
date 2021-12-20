@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: add-api-server-3
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: add-worker
+          image: duncanpierce/hetzanetes
+          command: ["/hetzanetes", "internal", "grow", "--server-type=cx11", "--api-server=true", "--node-suffix=3"]
+          envFrom:
+            - secretRef:
+                name: k3s
+            - secretRef:
+                name: hcloud

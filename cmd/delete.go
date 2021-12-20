@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Delete(c client.Client) *cobra.Command {
+func Delete() *cobra.Command {
 	var clusterName string
 
 	cmd := &cobra.Command{
@@ -21,6 +21,7 @@ func Delete(c client.Client) *cobra.Command {
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			c := client.New()
 			network, _, err := c.Network.GetByName(c, clusterName)
 			if err != nil {
 				return err
