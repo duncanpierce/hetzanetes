@@ -4,6 +4,10 @@ DOCKER:
 
 CONFIG:
 
+* https://docs.cilium.io/en/v1.11/gettingstarted/k3s/
+* https://docs.cilium.io/en/stable/gettingstarted/host-firewall/#host-firewall
+* [Cilium system requirements](https://docs.cilium.io/en/stable/operations/system_requirements/#mounted-ebpf-filesystem)
+* [Cilium help](https://docs.cilium.io/en/stable/gettinghelp/)  
 * kubectl get secret hetzanetes -n kube-system -o yaml
 * https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/
 * https://rancher.com/docs/k3s/latest/en/installation/install-options/
@@ -17,6 +21,11 @@ CONFIG:
 * [client-side API LB](https://www.youtube.com/watch?app=desktop&v=1Fet0qZdQrM)
 * https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/#add-a-label-to-a-node
 * https://pkg.go.dev/github.com/hetznercloud/hcloud-cloud-controller-manager/internal/annotation
+
+LOGS/STATUS:
+
+* /var/log/syslog
+* KUBECONFIG=/etc/rancher/k3s/k3s.yaml cilium status
 
 CRD:
 
@@ -34,4 +43,8 @@ UPGRADES
 
 * https://wiki.debian.org/UnattendedUpgrades
   * `APT::Periodic::Update-Package-Lists "1";` in `/etc/apt/apt.conf.d/02periodic`
-* https://www.linuxcapable.com/how-to-setup-configure-unattended-upgrades-on-ubuntu-20-04/ 
+* https://www.linuxcapable.com/how-to-setup-configure-unattended-upgrades-on-ubuntu-20-04/
+
+UNINSTALL:
+
+* /usr/local/bin/k3s-agent-uninstall.sh or /usr/local/bin/k3s-uninstall.sh
