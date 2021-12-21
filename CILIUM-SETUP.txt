@@ -1,0 +1,35 @@
+curl -sfL 'https://get.k3s.io' | sh -s - server --cluster-init --disable servicelb --disable local-storage --disable-cloud-controller --kubelet-arg cloud-provider=external --flannel-backend=none --disable-network-policy
+
+cat /var/lib/rancher/k3s/server/node-token
+
+--- node 2:
+
+curl -sfL https://get.k3s.io | K3S_URL='https://10.0.0.2:6443' K3S_TOKEN='...' sh -
+
+cat /var/log/syslog
+
+
+curl -L --remote-name-all https://github.com/cilium/cilium-cli/releases/latest/download/cilium-linux-amd64.tar.gz{,.sha256sum}
+sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
+sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
+rm cilium-linux-amd64.tar.gz{,.sha256sum}
+
+KUBECONFIG=/etc/rancher/k3s/k3s.yaml cilium install
+
+KUBECONFIG=/etc/rancher/k3s/k3s.yaml cilium status --wait
+
+---- node 3:
+
+curl -sfL https://get.k3s.io | K3S_URL='https://10.0.0.2:6443' K3S_TOKEN='...' sh -
+
+cat /var/log/syslog
+
+FAILS - cannot join cluster once cilium has been installed
+Dec 21 15:10:25 c k3s[1059]: time="2021-12-21T15:10:25.716769068Z" level=error msg="failed to get CA certs: Get \"https://127.0.0.1:6444/cacerts\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)"
+
+
+
+-----------
+
+Once Cilium is installed, servers can no longer join the cluster (even if Cilium is then uninstalled)
+
