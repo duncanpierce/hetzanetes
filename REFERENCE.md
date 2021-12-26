@@ -4,6 +4,11 @@ DOCKER:
 
 CONFIG:
 
+* https://evancordell.com/posts/kube-apis-crds/
+* https://kubernetes.io/docs/tasks/run-application/access-api-from-pod/
+  * /var/run/secrets/kubernetes.io/serviceaccount/token
+  * /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  * /var/run/secrets/kubernetes.io/serviceaccount/namespace
 * https://docs.cilium.io/en/v1.11/gettingstarted/k3s/
 * https://docs.cilium.io/en/stable/gettingstarted/host-firewall/#host-firewall
 * [Cilium system requirements](https://docs.cilium.io/en/stable/operations/system_requirements/#mounted-ebpf-filesystem)
@@ -22,6 +27,12 @@ CONFIG:
 * https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/#add-a-label-to-a-node
 * https://pkg.go.dev/github.com/hetznercloud/hcloud-cloud-controller-manager/internal/annotation
 
+CLUSTER MANAGEMENT:
+
+* https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
+  * https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-the-key-best-practices-for-running-cluster-autoscaler
+  * https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-expanders
+  
 LOGS/STATUS:
 
 * /var/log/syslog
@@ -33,6 +44,7 @@ CRD:
 * https://www.martin-helmich.de/en/blog/kubernetes-crd-client.html
 * https://developers.redhat.com/blog/2020/12/16/create-a-kubernetes-operator-in-golang-to-automatically-manage-a-simple-stateful-application#build_and_initialize_the_kubernetes_operator
 * https://book.kubebuilder.io/
+* https://kubernetes.io/docs/reference/using-api/api-concepts/#server-side-apply
 
 HETZNER CCM:
 
@@ -48,3 +60,7 @@ UPGRADES
 UNINSTALL:
 
 * /usr/local/bin/k3s-agent-uninstall.sh or /usr/local/bin/k3s-uninstall.sh
+
+EVICTION:
+
+* https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/

@@ -17,6 +17,7 @@ func Internal() *cobra.Command {
 		Kustomize(),
 		Grow(),
 		Spike(),
+		Spike2(),
 		Net(),
 		Watch(),
 	)
