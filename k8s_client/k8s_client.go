@@ -3,7 +3,6 @@ package k8s_client
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/json"
 	"net/http"
@@ -27,11 +26,13 @@ type (
 		Name string `json:"name"`
 	}
 	Spec struct {
+		Channel  string `json:"channel"`
 		NodeSets `json:"nodeSets"`
 	}
 	NodeSets []NodeSet
 	NodeSet  struct {
 		Name      string   `json:"name"`
+		ApiServer bool     `json:"apiServer"`
 		Replicas  int      `json:"replicas"`
 		NodeType  string   `json:"nodeType"`
 		Locations []string `json:"locations"`
@@ -64,29 +65,31 @@ func New() *K8sClient {
 	}
 }
 
-func (k *K8sClient) Do(method string, path string) (string, error) {
+func (k *K8sClient) DoRaw(method string, path string) ([]byte, error) {
 	request, err := http.NewRequest(method, k.BaseUrl+path, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	request.Header.Add("Authorization", "Bearer "+k.Token)
 	response, err := k.Client.Do(request)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
-	return string(body), err
+	return body, err
 }
 
-func (k *K8sClient) GetClusters() (string, error) {
-	result, err := k.Do(http.MethodGet, "/apis/hetzanetes.duncanpierce.org/v1/clusters")
-	fmt.Printf("Cluster JSON: %s\n", result)
-	var clusterList ClusterList
-	err = json.Unmarshal([]byte(result), &clusterList)
+func (k *K8sClient) Do(method string, path string, result interface{}) error {
+	data, err := k.DoRaw(method, path)
 	if err != nil {
-		return "", err
+		return err
 	}
-	fmt.Printf("Struct: %#v\n", clusterList)
-	return result, err
+	return json.Unmarshal(data, result)
+}
+
+func (k *K8sClient) GetClusterList() (*ClusterList, error) {
+	var clusterList ClusterList
+	err := k.Do(http.MethodGet, "/apis/hetzanetes.duncanpierce.org/v1/clusters", &clusterList)
+	return &clusterList, err
 }

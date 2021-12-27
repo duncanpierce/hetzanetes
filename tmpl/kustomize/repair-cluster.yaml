@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hetzanetes-repair
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: read-hetzanetes
+rules:
+  - apiGroups: ["hetzanetes.duncanpierce.org"]
+    resources: ["clusters"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hetzanetes-cluster-repair
+subjects:
+  - kind: ServiceAccount
+    name: hetzanetes-repair
+    namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: read-hetzanetes
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hetzanetes-repair
+  namespace: kube-system
+  labels:
+    app: hetzanetes-repair
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hetzanetes-repair
+  template:
+    metadata:
+      labels:
+        app: hetzanetes-repair
+    spec:
+      serviceAccountName: hetzanetes-repair
+      containers:
+        - name: repair-cluster
+          image: duncanpierce/hetzanetes
+          command: ["/hetzanetes", "internal", "repair"]
+          envFrom:
+            - secretRef:
+                name: k3s
+            - secretRef:
+                name: hcloud

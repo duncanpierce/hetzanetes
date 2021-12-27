@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/catch"
-	"github.com/duncanpierce/hetzanetes/client"
+	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
@@ -21,7 +21,7 @@ func Delete() *cobra.Command {
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := client.New()
+			c := hcloud_client.New()
 			network, _, err := c.Network.GetByName(c, clusterName)
 			if err != nil {
 				return err
@@ -73,7 +73,7 @@ func Delete() *cobra.Command {
 	return cmd
 }
 
-func getServers(c client.Client, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
+func getServers(c hcloud_client.Client, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
 	servers, err := c.Server.AllWithOpts(c, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: label.ClusterNameLabel + "=" + clusterName,

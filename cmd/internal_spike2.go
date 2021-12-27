@@ -10,13 +10,11 @@ import (
 
 func Spike2() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "spike2",
-		Short:   "Temporary in-cluster exploratory tool",
-		Long:    "Temporary in-cluster exploratory tool",
-		Example: "  hetzanetes spike2",
+		Use:   "spike2",
+		Short: "Temporary in-cluster exploratory tool",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := k8s_client.New()
-			_, err := client.GetClusters()
+			_, err := client.GetClusterList()
 			return err
 		},
 	}

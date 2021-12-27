@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/client"
+	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"time"
@@ -14,7 +14,7 @@ func Watch() *cobra.Command {
 		Short: "Watch actions in Hetzner API",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := client.New()
+			c := hcloud_client.New()
 			ticker := time.NewTicker(1 * time.Second)
 			for {
 				actions, _, err := c.Action.List(c, hcloud.ActionListOpts{

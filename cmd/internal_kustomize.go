@@ -8,8 +8,9 @@ import (
 // Write files needed to configure the cluster
 func Kustomize() *cobra.Command {
 	clusterConfig := tmpl.ClusterConfig{
-		ClusterName: "",
-		PodIpRange:  "",
+		ClusterName:       "",
+		PodIpRange:        "",
+		K3sReleaseChannel: "",
 	}
 
 	cmd := &cobra.Command{
@@ -27,5 +28,7 @@ func Kustomize() *cobra.Command {
 	cmd.MarkFlagRequired("name")
 	cmd.Flags().StringVar(&clusterConfig.PodIpRange, "pod-ip-range", "", "pod IP range")
 	cmd.MarkFlagRequired("pod-ip-range")
+	cmd.Flags().StringVar(&clusterConfig.K3sReleaseChannel, "channel", "", "K3s release channel")
+	cmd.MarkFlagRequired("channel")
 	return cmd
 }

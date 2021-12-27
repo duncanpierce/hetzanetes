@@ -16,10 +16,8 @@ import (
 
 func Spike() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "spike",
-		Short:   "Temporary in-cluster exploratory tool",
-		Long:    "Temporary in-cluster exploratory tool",
-		Example: "  hetzanetes spike",
+		Use:   "spike",
+		Short: "Temporary in-cluster exploratory tool",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			config, err := rest.InClusterConfig()

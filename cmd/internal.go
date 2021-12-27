@@ -7,7 +7,7 @@ import (
 func Internal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "internal",
-		Short:            "Commands for Hetzanetes internal use",
+		Short:            "Commands for Hetzanetes internal use, usually run inside the Kubernetes cluster",
 		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
@@ -15,9 +15,9 @@ func Internal() *cobra.Command {
 	}
 	cmd.AddCommand(
 		Kustomize(),
-		Grow(),
 		Spike(),
 		Spike2(),
+		Repair(),
 		Net(),
 		Watch(),
 	)

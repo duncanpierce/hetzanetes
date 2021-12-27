@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   name: "{{.ClusterName}}"
 spec:
-  channel: stable
+  channel: "{{.K3sReleaseChannel}}"
   nodeSets:
     - name: api
       apiServer: true
@@ -11,8 +11,6 @@ spec:
       replicas: 3
       locations:
         - hel1
-      labels:
-        role: api-server
     - name: worker
       nodeType: cx21
       replicas: 2

@@ -2,11 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - cluster-crd.yaml
-  - cluster.yaml
+  - repair-cluster.yaml
   - https://github.com/hetznercloud/hcloud-cloud-controller-manager/releases/latest/download/ccm-networks.yaml
   - https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.6.0/deploy/kubernetes/hcloud-csi.yml
-  - add-worker-1.yaml
-  - add-api-server-2.yaml
-  - add-api-server-3.yaml
 patches:
   - patch.yaml

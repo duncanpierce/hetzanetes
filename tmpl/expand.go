@@ -15,15 +15,16 @@ var cloudinit embed.FS
 var kustomize embed.FS
 
 type ClusterConfig struct {
-	ApiEndpoint      string
-	HetznerApiToken  string
-	ClusterName      string
-	PrivateIpRange   string // TODO define IpRange map[string]string and read as {{.IpRange.PrivateNetwork}} etc - maybe rename to ClusterNetwork
-	PodIpRange       string
-	ServiceIpRange   string
-	InstallDirectory string
-	JoinToken        string
-	ServerType       string
+	ApiEndpoint       string
+	HetznerApiToken   string
+	ClusterName       string
+	PrivateIpRange    string // TODO define IpRange map[string]string and read as {{.IpRange.PrivateNetwork}} etc - maybe rename to ClusterNetwork
+	PodIpRange        string
+	ServiceIpRange    string
+	InstallDirectory  string
+	JoinToken         string
+	ServerType        string
+	K3sReleaseChannel string
 	// TODO add Version map[string]string and emit versions in files unless the key is missing
 }
 

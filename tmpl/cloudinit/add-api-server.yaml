@@ -1,3 +1,3 @@
 {{template "update-packages.yaml" .}}
 runcmd:
-  - "curl -sfL 'https://get.k3s.io' | K3S_URL={{.ApiEndpoint}} K3S_TOKEN={{.JoinToken}} sh -s - server --kubelet-arg cloud-provider=external --flannel-iface={{template "get-private-interface.sh" .}}"
+  - "curl -sfL 'https://get.k3s.io' | K3S_URL={{.ApiEndpoint}} K3S_TOKEN={{.JoinToken}} INSTALL_K3S_CHANNEL={{.K3sReleaseChannel}} sh -s - server {{template "api-common-config.sh" .}} --flannel-iface={{template "get-private-interface.sh" .}}"

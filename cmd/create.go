@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/client"
 	"github.com/duncanpierce/hetzanetes/env"
+	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -20,6 +20,7 @@ func Create() *cobra.Command {
 	var labelsMap map[string]string
 	var serverType string
 	var osImage string
+	var k3sReleaseChannel string
 
 	cmd := &cobra.Command{
 		Use:              "create [FLAGS]",
@@ -29,19 +30,20 @@ func Create() *cobra.Command {
 		TraverseChildren: true,
 		Args:             cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := client.New()
+			c := hcloud_client.New()
 			apiToken := env.HCloudToken()
 			var labels label.Labels = labelsMap
 			labels[label.ClusterNameLabel] = clusterName
 
 			serverConfig := tmpl.ClusterConfig{
-				HetznerApiToken:  apiToken,
-				ClusterName:      clusterName,
-				PrivateIpRange:   ipRange.String(),
-				PodIpRange:       "10.42.0.0/16",
-				ServiceIpRange:   "10.43.0.0/16",
-				InstallDirectory: "/var/opt/hetzanetes",
-				ServerType:       serverType,
+				HetznerApiToken:   apiToken,
+				ClusterName:       clusterName,
+				PrivateIpRange:    ipRange.String(),
+				PodIpRange:        "10.42.0.0/16",
+				ServiceIpRange:    "10.43.0.0/16",
+				InstallDirectory:  "/var/opt/hetzanetes",
+				ServerType:        serverType,
+				K3sReleaseChannel: k3sReleaseChannel,
 			}
 			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
 
@@ -177,6 +179,7 @@ func Create() *cobra.Command {
 	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")
 	cmd.Flags().StringVar(&osImage, "os-image", "ubuntu-20.04", "Operating system image")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show what would be done without taking any action")
+	cmd.Flags().StringVar(&k3sReleaseChannel, "channel", "v1.21", "K3s release channel")
 
 	return cmd
 }

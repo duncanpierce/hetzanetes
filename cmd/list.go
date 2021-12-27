@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/client"
+	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
@@ -19,8 +19,8 @@ func List() *cobra.Command {
 		Example: `  hetzanetes list`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := client.New()
-			// TODO use NetworkListOpts with a label rather than filtering client-side
+			c := hcloud_client.New()
+			// TODO use NetworkListOpts with a label rather than filtering hcloud_client-side
 			networks, _, _ := c.Network.List(c, hcloud.NetworkListOpts{})
 			for _, network := range networks {
 				_, labelled := network.Labels[label.PrivateNetworkLabel]
