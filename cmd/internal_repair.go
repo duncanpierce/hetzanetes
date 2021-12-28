@@ -6,6 +6,7 @@ import (
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/duncanpierce/hetzanetes/k8s_client"
+	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"log"
@@ -22,7 +23,7 @@ func Repair() *cobra.Command {
 			ctx := context.Background()
 			k8sClient := k8s_client.New()
 			hcloudClient := hcloud_client.New()
-			ticker := time.NewTicker(1 * time.Minute)
+			ticker := time.NewTicker(10 * time.Second)
 			for {
 				<-ticker.C
 				err := repair(k8sClient, hcloudClient, ctx)
@@ -43,20 +44,37 @@ func repair(k8sClient *k8s_client.K8sClient, hcloudClient hcloud_client.Client, 
 	if len(clusterList.Items) != 1 {
 		return fmt.Errorf("expected 1 Cluster resource but found %d", len(clusterList.Items))
 	}
-	servers, err := hcloudClient.Server.All(ctx)
+	cluster := clusterList.Items[0]
+
+	servers, err := hcloudClient.Server.AllWithOpts(ctx, hcloud.ServerListOpts{
+		ListOpts: hcloud.ListOpts{
+			LabelSelector: label.ClusterNameLabel + "=" + cluster.Name,
+		},
+	})
 	if err != nil {
 		return err
 	}
-	cluster := clusterList.Items[0]
+	serversInANodeSet := map[*hcloud.Server]bool{}
 	for _, nodeSet := range cluster.NodeSets {
 		serversInSet := matchServersToNodeSet(servers, cluster.Name+"-"+nodeSet.Name+"-")
-		maxGenerationNumber := maxGenerationNumber(serversInSet)
+		log.Printf("identified %d servers in nodeset %s\n", len(serversInSet), nodeSet.Name)
+		for _, s := range serversInSet {
+			serversInANodeSet[s] = true
+		}
+		generationNumber := maxGenerationNumber(serversInSet) + 1
 		for i := len(serversInSet); i < nodeSet.Replicas; i++ {
-			maxGenerationNumber++
-			hcloudClient.CreateServer(env.HCloudToken(), cluster.Name, nodeSet.Name, nodeSet.ApiServer, nodeSet.NodeType, "ubuntu-20.04", maxGenerationNumber, cluster.Channel)
+			hcloudClient.CreateServer(env.HCloudToken(), cluster.Name, nodeSet.Name, nodeSet.ApiServer, nodeSet.NodeType, "ubuntu-20.04", generationNumber, cluster.Channel)
+			generationNumber++
 		}
 		for i := nodeSet.Replicas; i < len(serversInSet); i++ {
-			// TODO delete lowest generation server
+			// TODO delete lowest generation servers
+		}
+	}
+	for _, s := range servers {
+		if !serversInANodeSet[s] {
+			// TODO taint/drain the node, delete node, then delete server
+			log.Printf("deleting server %s not in any nodeset\n", s.Name)
+			hcloudClient.Server.Delete(ctx, s)
 		}
 	}
 	return err
@@ -76,7 +94,8 @@ func matchServersToNodeSet(servers []*hcloud.Server, matchingPrefix string) map[
 	serversInSet := map[int]*hcloud.Server{}
 	for _, server := range servers {
 		if strings.HasPrefix(server.Name, matchingPrefix) {
-			generationNumber, err := strconv.Atoi(server.Name[:len(matchingPrefix)])
+			generationText := server.Name[len(matchingPrefix):]
+			generationNumber, err := strconv.Atoi(generationText)
 			if err == nil {
 				serversInSet[generationNumber] = server
 			}
