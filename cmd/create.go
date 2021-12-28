@@ -179,7 +179,7 @@ func Create() *cobra.Command {
 	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")
 	cmd.Flags().StringVar(&osImage, "os-image", "ubuntu-20.04", "Operating system image")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show what would be done without taking any action")
-	cmd.Flags().StringVar(&k3sReleaseChannel, "channel", "v1.21", "K3s release channel")
+	cmd.Flags().StringVar(&k3sReleaseChannel, "channel", "stable", "K3s release channel")
 
 	return cmd
 }
