@@ -32,6 +32,21 @@ CLUSTER MANAGEMENT:
 * https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
   * https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-the-key-best-practices-for-running-cluster-autoscaler
   * https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-expanders
+* `kubectl cluster-info dump`
+* `kubectl get pods --all-namespaces -o custom-columns=NAME:.metadata.name,CONTROLLER:.metadata.ownerReferences[].kind,NAMESPACE:.metadata.namespace`
+* `kubectl get pods --all-namespaces -o wide --field-selector spec.nodeName=<node-name>`
+  * equiv of API query `/api/v1/namespaces/<namespace>/pods?fieldSelector=spec.nodeName%3D<node-name>`
+  * then walk through, ignore any with `metadata.ownerReferences[].{kind=DaemonSet,apiVersion=apps/v1}`
+  * evict the remaining pods: `POST /api/v1/namespaces/{namespace}/pods/{name}/eviction` (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#create-eviction-pod-v1-core)
+  * cordon a node with:
+  
+```yaml
+spec:
+  taints:
+  - effect: NoSchedule
+    key: node.kubernetes.io/unschedulable
+  unschedulable: true
+```
   
 LOGS/STATUS:
 

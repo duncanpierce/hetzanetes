@@ -10,6 +10,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -67,7 +68,10 @@ func repair(k8sClient *k8s_client.K8sClient, hcloudClient hcloud_client.Client, 
 			generationNumber++
 		}
 		for i := nodeSet.Replicas; i < len(serversInSet); i++ {
-			// TODO delete lowest generation servers
+			lowestGeneration := minGenerationNumber(serversInSet)
+			log.Printf("deleting server gen %d from nodeset %s\n", lowestGeneration, nodeSet.Name)
+			// TODO taint/drain the node, delete node, then delete server
+			hcloudClient.Server.Delete(ctx, serversInSet[lowestGeneration])
 		}
 	}
 	for _, s := range servers {
@@ -88,6 +92,16 @@ func maxGenerationNumber(serversInSet map[int]*hcloud.Server) int {
 		}
 	}
 	return maxGenerationNumber
+}
+
+func minGenerationNumber(serversInSet map[int]*hcloud.Server) int {
+	minGenerationNumber := math.MaxInt64
+	for i := range serversInSet {
+		if i < minGenerationNumber {
+			minGenerationNumber = i
+		}
+	}
+	return minGenerationNumber
 }
 
 func matchServersToNodeSet(servers []*hcloud.Server, matchingPrefix string) map[int]*hcloud.Server {
