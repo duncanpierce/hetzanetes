@@ -3,16 +3,11 @@ kind: Cluster
 metadata:
   name: "{{.ClusterName}}"
 spec:
-  channel: "{{.K3sReleaseChannel}}"
+  channel: stable
   nodeSets:
     - name: api
       apiServer: true
       nodeType: cpx11
       replicas: 1
-      locations:
-        - hel1
-    - name: worker
-      nodeType: cpx11
-      replicas: 0
       locations:
         - hel1

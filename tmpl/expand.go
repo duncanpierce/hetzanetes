@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"github.com/Masterminds/sprig"
 	"os"
 	"text/template"
 )
@@ -13,6 +14,9 @@ var cloudinit embed.FS
 
 //go:embed kustomize/*
 var kustomize embed.FS
+
+//go:embed default-cluster.yaml
+var defaultCluster string
 
 type ClusterConfig struct {
 	ApiEndpoint       string
@@ -25,6 +29,7 @@ type ClusterConfig struct {
 	JoinToken         string
 	ServerType        string
 	K3sReleaseChannel string
+	ClusterYaml       string
 	// TODO add Version map[string]string and emit versions in files unless the key is missing
 }
 
@@ -33,11 +38,11 @@ func Cloudinit(config ClusterConfig, templateName string) string {
 }
 
 func Parse(files embed.FS, directory string) *template.Template {
-	template, err := template.ParseFS(files, directory+"/*")
+	t, err := template.New("template").Funcs(sprig.TxtFuncMap()).ParseFS(files, directory+"/*")
 	if err != nil {
 		panic(fmt.Sprintf("error loading templates: %s", err.Error()))
 	}
-	return template
+	return t
 }
 
 func Expand(t *template.Template, templateName string, config ClusterConfig) string {
@@ -60,4 +65,17 @@ func WriteKustomizeFiles(config ClusterConfig) error {
 		template.Execute(file, config)
 	}
 	return nil
+}
+
+func DefaultClusterFile(clusterName string) ([]byte, error) {
+	t, err := template.New("default").Parse(defaultCluster)
+	if err != nil {
+		return nil, err
+	}
+	b := &bytes.Buffer{}
+	err = t.Execute(b, ClusterConfig{ClusterName: clusterName})
+	if err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
 }

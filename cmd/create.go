@@ -1,18 +1,23 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/duncanpierce/hetzanetes/label"
+	"github.com/duncanpierce/hetzanetes/model"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"net"
 )
 
 func Create() *cobra.Command {
 	var dryRun bool
+	var clusterYamlFilename string
 
 	serverType := "cpx11"
 	osImage := "ubuntu-22.04"
@@ -27,24 +32,49 @@ func Create() *cobra.Command {
 		Long:             "Create a new Hetzanetes cluster in a new private network.",
 		Example:          "  hetzanetes create [CLUSTER-NAME]",
 		TraverseChildren: true,
-		Args:             cobra.ExactArgs(1),
+		Args:             cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			clusterName := args[0]
+			var cluster model.Cluster
+			var clusterYaml []byte
+			var err error
+
+			if clusterYamlFilename != "" {
+				if len(args) != 0 {
+					return errors.New("cluster name must not be provided when using a cluster YAML file")
+				}
+				clusterYaml, err = ioutil.ReadFile(clusterYamlFilename)
+				if err != nil {
+					return err
+				}
+			} else {
+				if len(args) < 1 {
+					return errors.New("must provide a cluster name")
+				}
+				clusterYaml, err = tmpl.DefaultClusterFile(args[0])
+				if err != nil {
+					return err
+				}
+			}
+			err = yaml.Unmarshal(clusterYaml, &cluster)
+			if err != nil {
+				return err
+			}
 
 			c := hcloud_client.New()
 			apiToken := env.HCloudToken()
 			labels := label.Labels{}
-			labels[label.ClusterNameLabel] = clusterName
+			labels[label.ClusterNameLabel] = cluster.Name
 
 			serverConfig := tmpl.ClusterConfig{
 				HetznerApiToken:   apiToken,
-				ClusterName:       clusterName,
+				ClusterName:       cluster.Name,
 				PrivateIpRange:    ipRange.String(),
 				PodIpRange:        "10.42.0.0/16",
 				ServiceIpRange:    "10.43.0.0/16",
 				InstallDirectory:  "/var/opt/hetzanetes",
 				ServerType:        serverType,
 				K3sReleaseChannel: k3sReleaseChannel,
+				ClusterYaml:       string(clusterYaml),
 			}
 			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
 
@@ -68,7 +98,7 @@ func Create() *cobra.Command {
 			// TODO protect this network - it could be difficult to repair if deleted (e.g. server gets a new interface flannel doesn't know about)
 			networkLabels := labels.Copy().Mark(label.PrivateNetworkLabel)
 			network, _, err := c.Network.Create(c, hcloud.NetworkCreateOpts{
-				Name:    clusterName,
+				Name:    cluster.Name,
 				IPRange: &ipRange,
 				Subnets: subnets,
 				Routes:  nil,
@@ -90,7 +120,7 @@ func Create() *cobra.Command {
 
 			_, allIPv4, _ := net.ParseCIDR("0.0.0.0/0")
 			_, allIPv6, _ := net.ParseCIDR("::/0")
-			clusterSelector := label.ClusterNameLabel + "==" + clusterName
+			clusterSelector := label.ClusterNameLabel + "==" + cluster.Name
 			firewallRules := []hcloud.FirewallRule{
 				{
 					Protocol:  hcloud.FirewallRuleProtocolICMP,
@@ -105,7 +135,7 @@ func Create() *cobra.Command {
 				},
 			}
 			_, _, err = c.Firewall.Create(c, hcloud.FirewallCreateOpts{
-				Name:  clusterName + "-worker",
+				Name:  cluster.Name + "-worker",
 				Rules: firewallRules,
 				ApplyTo: []hcloud.FirewallResource{
 					{
@@ -127,7 +157,7 @@ func Create() *cobra.Command {
 				Direction: hcloud.FirewallRuleDirectionIn,
 			})
 			_, _, err = c.Firewall.Create(c, hcloud.FirewallCreateOpts{
-				Name:  clusterName + "-api",
+				Name:  cluster.Name + "-api",
 				Rules: firewallRules,
 				ApplyTo: []hcloud.FirewallResource{
 					{
@@ -142,17 +172,18 @@ func Create() *cobra.Command {
 				return err
 			}
 
-			// TODO allow a label selector to select keys to use (repair will keep it up to date)
 			sshKeys, err := c.SSHKey.All(c)
 			if err != nil {
 				return err
 			}
 
-			// Hetzner recommend specifying locations rather than datacenters: https://docs.hetzner.cloud/#servers-create-a-server
-			// TODO add --regions option
 			t := true
+			firstApiServerNodeSet := cluster.FirstApiServerNodeSet()
+			if firstApiServerNodeSet == nil {
+				return errors.New("no API servers specified")
+			}
 			serverCreateResult, _, err := c.Server.Create(c, hcloud.ServerCreateOpts{
-				Name:             clusterName + "-api-1",
+				Name:             firstApiServerNodeSet.ServerName(cluster.Name, 1),
 				ServerType:       serverType,
 				Image:            image,
 				SSHKeys:          sshKeys,
@@ -170,5 +201,6 @@ func Create() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show what would be done without taking any action")
+	cmd.Flags().StringVarP(&clusterYamlFilename, "filename", "f", "", "Name of YAML file specifying cluster configuration")
 	return cmd
 }

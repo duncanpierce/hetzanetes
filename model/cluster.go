@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/duncanpierce/hetzanetes/catch"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/hcloud_client"
@@ -73,6 +74,19 @@ func (c *Cluster) Servers() (result Servers) {
 		result = append(result, nodeSet.Servers...)
 	}
 	return
+}
+
+func (c *Cluster) FirstApiServerNodeSet() *NodeSet {
+	for _, nodeSet := range c.NodeSets {
+		if nodeSet.ApiServer {
+			return nodeSet
+		}
+	}
+	return nil
+}
+
+func (n *NodeSet) ServerName(clusterName string, generation int) string {
+	return fmt.Sprintf("%s-%s-%d", clusterName, n.Name, generation)
 }
 
 func (c *Cluster) NewestApiServer() (newest *Server) {

@@ -4,6 +4,10 @@ runcmd:
   - kubectl create secret generic hcloud -n kube-system --from-literal=HCLOUD_TOKEN={{.HetznerApiToken}} --from-literal=HCLOUD_NETWORK={{.ClusterName}}
   - kubectl create secret generic k3s -n kube-system --from-file=K3S_TOKEN=/var/lib/rancher/k3s/server/token --from-literal=K3S_URL="https://{{template "get-private-ip-address.sh" .}}:6443"
   - mkdir {{.InstallDirectory}}
-  - docker run -v {{.InstallDirectory}}:/install -w /install duncanpierce/hetzanetes internal kustomize --name={{.ClusterName}} --pod-ip-range={{.PodIpRange}} --channel={{.K3sReleaseChannel}}
+  - docker run -v {{.InstallDirectory}}:/install -w /install duncanpierce/hetzanetes internal kustomize --pod-ip-range={{.PodIpRange}}
   - kubectl apply -k {{.InstallDirectory}}
+  - |
+    cat > {{.InstallDirectory}}/cluster.yaml << END_CLUSTER_YAML
+{{indent 4 .ClusterYaml}}
+    END_CLUSTER_YAML
   - kubectl apply -f {{.InstallDirectory}}/cluster.yaml

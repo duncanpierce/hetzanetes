@@ -27,6 +27,42 @@ A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https:/
 7. From this point on, the cluster is self-managing. The complete process takes around 10 minutes using CX11 servers.
 8. You can now log into any of the API servers and use `kubectl edit cluster/test` (or whatever cluster name you chose) to reconfigure the cluster.
 
+## Configuring the cluster before creation
+
+Save this example as a file named `cluster.yaml` then customise it with the server nodes you want.
+This example has a single set of API server nodes and two sets of worker nodes.
+
+```yaml
+apiVersion: hetzanetes.duncanpierce.org/v1
+kind: Cluster
+metadata:
+  name: example
+spec:
+  channel: stable
+  nodeSets:
+    - name: api
+      apiServer: true
+      nodeType: cpx21
+      replicas: 3
+      locations:
+        - hel1
+        - fsn1
+        - nbg1
+    - name: worker-pool-a
+      nodeType: cpx11
+      replicas: 2
+      locations:
+        - hel1
+        - fsn1
+    - name: worker-pool-b
+      nodeType: cpx11
+      replicas: 1
+      locations:
+        - nbg1
+```
+
+Then run `hetzanetes create -f cluster.yaml` to create the first API server node. This will then create the rest of the cluster.
+
 ## In future
 
 * Release prebuild executables to avoid building hetzanetes yourself.
