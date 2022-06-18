@@ -15,6 +15,7 @@ A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https:/
 * Downsizing the API server node set can hang the cluster. Worker node pools can be downsized.
 * Servers are not deleted gracefully.
 * Cannot manage other clusters, even though you could have more than one `Cluster` resource, in theory.
+* Deleting a cluster doesn't always remove the private network and firewalls.
 
 ## Getting started
 
