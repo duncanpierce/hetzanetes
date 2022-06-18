@@ -27,7 +27,6 @@ type ClusterConfig struct {
 	ServiceIpRange    string
 	InstallDirectory  string
 	JoinToken         string
-	ServerType        string
 	K3sReleaseChannel string
 	ClusterYaml       string
 	// TODO add Version map[string]string and emit versions in files unless the key is missing

@@ -19,9 +19,7 @@ func Create() *cobra.Command {
 	var dryRun bool
 	var clusterYamlFilename string
 
-	serverType := "cpx11"
 	osImage := "ubuntu-22.04"
-	k3sReleaseChannel := "stable"
 	ipRange := net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}
 	sshPort := "22"
 	k3sApiPort := "6443"
@@ -60,6 +58,11 @@ func Create() *cobra.Command {
 				return err
 			}
 
+			firstApiServerNodeSet := cluster.FirstApiServerNodeSet()
+			if firstApiServerNodeSet == nil {
+				return errors.New("no API servers specified")
+			}
+
 			c := hcloud_client.New()
 			apiToken := env.HCloudToken()
 			labels := label.Labels{}
@@ -72,8 +75,7 @@ func Create() *cobra.Command {
 				PodIpRange:        "10.42.0.0/16",
 				ServiceIpRange:    "10.43.0.0/16",
 				InstallDirectory:  "/var/opt/hetzanetes",
-				ServerType:        serverType,
-				K3sReleaseChannel: k3sReleaseChannel,
+				K3sReleaseChannel: cluster.Channel,
 				ClusterYaml:       string(clusterYaml),
 			}
 			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
@@ -109,7 +111,7 @@ func Create() *cobra.Command {
 			}
 			fmt.Printf("Created network %s (%s)\n", network.Name, network.IPRange.String())
 
-			serverType, _, err := c.ServerType.GetByName(c, serverType)
+			serverType, _, err := c.ServerType.GetByName(c, firstApiServerNodeSet.NodeType)
 			if err != nil {
 				return err
 			}
@@ -178,10 +180,6 @@ func Create() *cobra.Command {
 			}
 
 			t := true
-			firstApiServerNodeSet := cluster.FirstApiServerNodeSet()
-			if firstApiServerNodeSet == nil {
-				return errors.New("no API servers specified")
-			}
 			serverCreateResult, _, err := c.Server.Create(c, hcloud.ServerCreateOpts{
 				Name:             firstApiServerNodeSet.ServerName(cluster.Name, 1),
 				ServerType:       serverType,
