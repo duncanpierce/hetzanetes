@@ -4,6 +4,7 @@ DOCKER:
 
 CONFIG:
 
+* https://blog.atomist.com/kubernetes-apply-replace-patch/
 * https://evancordell.com/posts/kube-apis-crds/
 * https://kubernetes.io/docs/tasks/run-application/access-api-from-pod/
   * /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -29,6 +30,7 @@ CONFIG:
 
 CLUSTER MANAGEMENT:
 
+* https://github.com/Masterminds/semver
 * https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
   * https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-the-key-best-practices-for-running-cluster-autoscaler
   * https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-expanders
@@ -39,6 +41,8 @@ CLUSTER MANAGEMENT:
   * then walk through, ignore any with `metadata.ownerReferences[].{kind=DaemonSet,apiVersion=apps/v1}`
   * evict the remaining pods: `POST /api/v1/namespaces/{namespace}/pods/{name}/eviction` (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#create-eviction-pod-v1-core)
   * cordon a node with:
+* [Well known taints and annotations](https://kubernetes.io/docs/reference/labels-annotations-taints/)
+  * Taint for control plane nodes is `node-role.kubernetes.io/master:NoSchedule`
   
 ```yaml
 spec:

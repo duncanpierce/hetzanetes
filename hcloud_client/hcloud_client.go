@@ -98,3 +98,9 @@ func (c Client) CreateServer(apiToken string, clusterName string, nodeSetName st
 	fmt.Printf("Created server %s in %s\n", server.Server.Name, server.Server.Datacenter.Name)
 	return nil
 }
+
+func (c Client) DrainAndDeleteServer(server *hcloud.Server) error {
+	// TODO cordon, drain, pause?, delete node, pause?, delete server
+	_, err := c.Server.Delete(c, server)
+	return err
+}

@@ -3,6 +3,7 @@ package k8s_client
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/duncanpierce/hetzanetes/model"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/json"
 	"net/http"
@@ -15,27 +16,7 @@ type (
 		Token   string
 	}
 	ClusterList struct {
-		Items ClusterItems `json:"items"`
-	}
-	ClusterItems []ClusterItem
-	ClusterItem  struct {
-		Metadata `json:"metadata"`
-		Spec     `json:"spec"`
-	}
-	Metadata struct {
-		Name string `json:"name"`
-	}
-	Spec struct {
-		Channel  string `json:"channel"`
-		NodeSets `json:"nodeSets"`
-	}
-	NodeSets []NodeSet
-	NodeSet  struct {
-		Name      string   `json:"name"`
-		ApiServer bool     `json:"apiServer"`
-		Replicas  int      `json:"replicas"`
-		NodeType  string   `json:"nodeType"`
-		Locations []string `json:"locations"`
+		Items model.Clusters `json:"items"`
 	}
 )
 
