@@ -4,9 +4,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/duncanpierce/hetzanetes/model"
-	"io/ioutil"
+	"io"
 	"k8s.io/apimachinery/pkg/util/json"
 	"net/http"
+	"os"
 )
 
 type (
@@ -21,7 +22,7 @@ type (
 )
 
 func New() *K8sClient {
-	cert, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	cert, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +36,7 @@ func New() *K8sClient {
 			},
 		},
 	}
-	tokenFile, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	tokenFile, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +58,7 @@ func (k *K8sClient) DoRaw(method string, path string) ([]byte, error) {
 		return nil, err
 	}
 	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	return body, err
 }
 
