@@ -11,16 +11,16 @@ import (
 )
 
 func Delete() *cobra.Command {
-	var clusterName string
-
 	cmd := &cobra.Command{
-		Use:              "delete [FLAGS]",
+		Use:              "delete [CLUSTER-NAME]",
 		Short:            "Delete a cluster",
 		Long:             "Delete a Hetzanetes cluster and all associated resources including servers and networks.",
-		Example:          "  hetzanetes delete --name=cluster-1",
+		Example:          "  hetzanetes delete [CLUSTER-NAME]",
 		TraverseChildren: true,
-		Args:             cobra.NoArgs,
+		Args:             cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			clusterName := args[0]
+
 			c := hcloud_client.New()
 			network, _, err := c.Network.GetByName(c, clusterName)
 			if err != nil {
@@ -67,9 +67,6 @@ func Delete() *cobra.Command {
 			return errs.OrNil()
 		},
 	}
-	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
-	cmd.MarkFlagRequired("name")
-
 	return cmd
 }
 

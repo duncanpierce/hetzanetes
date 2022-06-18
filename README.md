@@ -21,7 +21,7 @@ A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https:/
 1. Create a Hetzner Cloud project, if you don't already have one.
 2. Create a read+write API Token in that project (under **Security > API Tokens**), if you don't already have one.
 3. Assign the API Token to an environment variable named `HCLOUD_TOKEN`.
-4. Run `hetzanetes create --name=test` to create a cluster called `test`.
+4. Run `hetzanetes create test` to create a cluster called `test`.
 5. Wait patiently while a private network, firewall and first Kubernetes API server are created, security updates are installed, server rebooted, Hetzner's Kubernetes plugins installed.
 6. Once ready, the first API server will read the `Cluster` custom resource and create more API servers and workers as needed.
 7. From this point on, the cluster is self-managing. The complete process takes around 10 minutes using CX11 servers.

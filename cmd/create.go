@@ -11,28 +11,29 @@ import (
 	"net"
 )
 
-// TODO add options to --protected, --backups to enable protection and backups
-// TODO maybe protected should be the default
 func Create() *cobra.Command {
 	var dryRun bool
-	var clusterName string
-	var ipRange net.IPNet
-	var labelsMap map[string]string
-	var serverType string
-	var osImage string
-	var k3sReleaseChannel string
+
+	serverType := "cpx11"
+	osImage := "ubuntu-22.04"
+	k3sReleaseChannel := "stable"
+	ipRange := net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}
+	sshPort := "22"
+	k3sApiPort := "6443"
 
 	cmd := &cobra.Command{
-		Use:              "create [FLAGS]",
+		Use:              "create [CLUSTER-NAME] [FLAGS]",
 		Short:            "Create a new cluster",
 		Long:             "Create a new Hetzanetes cluster in a new private network.",
-		Example:          "  hetzanetes create --name=cluster-1",
+		Example:          "  hetzanetes create [CLUSTER-NAME]",
 		TraverseChildren: true,
-		Args:             cobra.NoArgs,
+		Args:             cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			clusterName := args[0]
+
 			c := hcloud_client.New()
 			apiToken := env.HCloudToken()
-			var labels label.Labels = labelsMap
+			labels := label.Labels{}
 			labels[label.ClusterNameLabel] = clusterName
 
 			serverConfig := tmpl.ClusterConfig{
@@ -89,8 +90,6 @@ func Create() *cobra.Command {
 
 			_, allIPv4, _ := net.ParseCIDR("0.0.0.0/0")
 			_, allIPv6, _ := net.ParseCIDR("::/0")
-			sshPort := "22"
-			k3sApiPort := "6443"
 			clusterSelector := label.ClusterNameLabel + "==" + clusterName
 			firewallRules := []hcloud.FirewallRule{
 				{
@@ -170,16 +169,6 @@ func Create() *cobra.Command {
 			return c.Await(serverCreateResult.Action)
 		},
 	}
-	cmd.Flags().StringVar(&clusterName, "name", "", "Cluster name (required)")
-	cmd.MarkFlagRequired("name")
-	cmd.Flags().IPNetVar(&ipRange, "cluster-ip-range", net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}, "Cluster network IP range")
-	// TODO remove cluster-ip-range option? make it an attribute of the network provider?
-	// TODO allow create-time-only configuration of pod and service IP ranges? might be easier to leave it on defaults
-	cmd.Flags().StringToStringVar(&labelsMap, "label", map[string]string{}, "User-defined labels ('key=value') (can be specified multiple times)")
-	cmd.Flags().StringVar(&serverType, "server-type", "cx11", "Server type")
-	cmd.Flags().StringVar(&osImage, "os-image", "ubuntu-20.04", "Operating system image")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show what would be done without taking any action")
-	cmd.Flags().StringVar(&k3sReleaseChannel, "channel", "stable", "K3s release channel")
-
 	return cmd
 }

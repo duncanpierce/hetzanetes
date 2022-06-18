@@ -7,13 +7,12 @@ spec:
   nodeSets:
     - name: api
       apiServer: true
-      nodeType: cx11
-      replicas: 3
+      nodeType: cpx11
+      replicas: 1
       locations:
         - hel1
     - name: worker
-      nodeType: cx21
-      replicas: 2
+      nodeType: cpx11
+      replicas: 0
       locations:
         - hel1
-        - fsn1
