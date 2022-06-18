@@ -27,6 +27,8 @@ CONFIG:
 * [client-side API LB](https://www.youtube.com/watch?app=desktop&v=1Fet0qZdQrM)
 * https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/#add-a-label-to-a-node
 * https://pkg.go.dev/github.com/hetznercloud/hcloud-cloud-controller-manager/internal/annotation
+* [Kubernetes REST API docs](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/)
+* [Example of strategic patch using REST API](https://stackoverflow.com/questions/71874714/patch-through-kuberentes-rest-api)
 
 CLUSTER MANAGEMENT:
 

@@ -17,14 +17,18 @@ type (
 	Cluster  struct {
 		Metadata         `json:"metadata"`
 		Spec             `json:"spec"`
-		UnmatchedServers []*hcloud.Server
+		Status           `json:"status"`
+		UnmatchedServers []*hcloud.Server `json:"-"`
 	}
 	Metadata struct {
-		Name string `json:"name"`
+		Name string `json:"name,omitempty"`
 	}
 	Spec struct {
-		Channel  string `json:"channel"`
-		NodeSets `json:"nodeSets"`
+		Channel  string `json:"channel,omitempty"`
+		NodeSets `json:"nodeSets,omitempty"`
+	}
+	Status struct {
+		NodeSetStatuses `json:"nodeSets,omitempty"`
 	}
 	NodeSets []*NodeSet
 	NodeSet  struct {
@@ -32,8 +36,13 @@ type (
 		ApiServer bool     `json:"apiServer"`
 		Replicas  int      `json:"replicas"`
 		NodeType  string   `json:"nodeType"`
-		Locations []string `json:"locations"`
-		Servers   Servers
+		Locations []string `json:"locations,omitempty"`
+		Servers   Servers  `json:"-"`
+	}
+	NodeSetStatuses []*NodeSetStatus
+	NodeSetStatus   struct {
+		Name       string `json:"name"`
+		Generation int    `json:"generation"`
 	}
 	Servers []*Server
 	Server  struct {
@@ -87,6 +96,15 @@ func (c *Cluster) FirstApiServerNodeSet() *NodeSet {
 
 func (n *NodeSet) ServerName(clusterName string, generation int) string {
 	return fmt.Sprintf("%s-%s-%d", clusterName, n.Name, generation)
+}
+
+func (n *NodeSetStatuses) Named(name string) *NodeSetStatus {
+	for _, x := range *n {
+		if x.Name == name {
+			return x
+		}
+	}
+	return nil
 }
 
 func (c *Cluster) NewestApiServer() (newest *Server) {

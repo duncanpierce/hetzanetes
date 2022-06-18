@@ -42,5 +42,17 @@ spec:
                           type: string
                       labels:
                         type: object
+            status:
+              type: object
+              properties:
+                nodeSets:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      generation:
+                        type: integer
       subresources:
         status: {}

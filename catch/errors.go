@@ -31,3 +31,7 @@ func (errs *Errors) Add(err error) {
 		*errs = append(*errs, err)
 	}
 }
+
+func (errs *Errors) HasErrors() bool {
+	return len(*errs) > 0
+}
