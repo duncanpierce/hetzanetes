@@ -8,7 +8,6 @@ import (
 	"github.com/duncanpierce/hetzanetes/model"
 	"io"
 	"k8s.io/apimachinery/pkg/util/json"
-	"log"
 	"net/http"
 	"os"
 )
@@ -79,7 +78,7 @@ func (k *K8sClient) Do(method string, path string, headers map[string]string, re
 
 	if request != nil {
 		requestBody, err = json.Marshal(request)
-		log.Printf("formatted request body as %s\n", string(requestBody))
+		//log.Printf("formatted request body as %s\n", string(requestBody))
 	}
 	if err != nil {
 		return err
