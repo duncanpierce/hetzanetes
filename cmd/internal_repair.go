@@ -38,8 +38,8 @@ func Repair() *cobra.Command {
 				cluster := clusterList.Items[0]
 
 				// TODO remove this spike
-				err = k8sClient.UpdateStatus(cluster.Name, &model.Status{
-					NodeSetStatuses: model.NodeSetStatuses{
+				err = k8sClient.SaveStatus(cluster.Name, &model.Status{
+					NodeSetStatuses: &model.NodeSetStatuses{
 						&model.NodeSetStatus{
 							Name:       "api",
 							Generation: 1,

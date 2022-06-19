@@ -15,9 +15,9 @@ import (
 type (
 	Clusters []*Cluster
 	Cluster  struct {
-		Metadata         `json:"metadata"`
-		Spec             `json:"spec"`
-		Status           `json:"status"`
+		*Metadata        `json:"metadata,omitempty"`
+		*Spec            `json:"spec,omitempty"`
+		*Status          `json:"status,omitempty"`
 		UnmatchedServers []*hcloud.Server `json:"-"`
 	}
 	Metadata struct {
@@ -28,7 +28,7 @@ type (
 		NodeSets `json:"nodeSets,omitempty"`
 	}
 	Status struct {
-		NodeSetStatuses `json:"nodeSets,omitempty"`
+		*NodeSetStatuses `json:"nodeSets,omitempty"`
 	}
 	NodeSets []*NodeSet
 	NodeSet  struct {

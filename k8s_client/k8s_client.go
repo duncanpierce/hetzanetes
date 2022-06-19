@@ -100,9 +100,9 @@ func (k *K8sClient) GetClusterList() (*ClusterList, error) {
 	return &clusterList, err
 }
 
-func (k *K8sClient) UpdateStatus(clusterName string, status *model.Status) error {
+func (k *K8sClient) SaveStatus(clusterName string, status *model.Status) error {
 	patch := model.Cluster{
-		Status: *status,
+		Status: status,
 	}
 	headers := map[string]string{
 		"Content-Type": "application/merge-patch+json",
