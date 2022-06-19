@@ -3,6 +3,7 @@ package catch
 import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"strings"
+	"time"
 )
 
 type Errors []error
@@ -34,4 +35,16 @@ func (errs *Errors) Add(err error) {
 
 func (errs *Errors) HasErrors() bool {
 	return len(*errs) > 0
+}
+
+func (errs *Errors) Retry(times int, sleep time.Duration, action func() error) {
+	err := action()
+	for i := 1; i < times; i++ {
+		if err == nil {
+			return
+		}
+		time.Sleep(sleep)
+		err = action()
+	}
+	errs.Add(err)
 }

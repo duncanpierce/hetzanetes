@@ -8,6 +8,7 @@ import (
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 func Delete() *cobra.Command {
@@ -43,31 +44,38 @@ func Delete() *cobra.Command {
 			}
 			// TODO how do we prevent the cluster from auto-repairing while we're deleting it? Maybe delete should be something the cluster does to itself?
 
-			errs := catch.Errors{}
+			errs := &catch.Errors{}
 			for _, server := range labelledServers {
-				// TODO retry if deletion fails?
-				errs.Catch(c.Server.Delete(c, server))
+				errs.Retry(3, 100*time.Millisecond, func() error {
+					_, err := c.Server.Delete(c, server)
+					return err
+				})
 			}
 			if !errs.HasErrors() {
-				errs.Catch(c.Network.Delete(c, network))
+				errs.Retry(3, 100*time.Millisecond, func() error {
+					_, err := c.Network.Delete(c, network)
+					return err
+				})
 			}
 
-			apiFirewall, _, apiFirewallErr := c.Firewall.GetByName(c, clusterName+"-api")
-			errs.Add(apiFirewallErr)
-			workerFirewall, _, workerFirewallErr := c.Firewall.GetByName(c, clusterName+"-worker")
-			errs.Add(workerFirewallErr)
-			if apiFirewallErr == nil {
-				_, err = c.Firewall.Delete(c, apiFirewall)
-				errs.Add(err)
-			}
-			if workerFirewallErr == nil {
-				_, err = c.Firewall.Delete(c, workerFirewall)
-				errs.Add(err)
-			}
+			deleteFirewall(errs, c, clusterName+"-api")
+			deleteFirewall(errs, c, clusterName+"-worker")
+
 			return errs.OrNil()
 		},
 	}
 	return cmd
+}
+
+func deleteFirewall(errs *catch.Errors, c hcloud_client.Client, firewallName string) {
+	errs.Retry(3, 100*time.Millisecond, func() error {
+		firewall, _, err := c.Firewall.GetByName(c, firewallName)
+		if err != nil {
+			return err
+		}
+		_, err = c.Firewall.Delete(c, firewall)
+		return err
+	})
 }
 
 func getServers(c hcloud_client.Client, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {

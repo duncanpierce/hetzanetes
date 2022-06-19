@@ -122,7 +122,7 @@ func (c *Cluster) NewestApiServer() (newest *Server) {
 }
 
 func (c *Cluster) Repair(hcloudClient hcloud_client.Client) error {
-	errs := catch.Errors{}
+	errs := &catch.Errors{}
 	serversMissing := false
 	for _, nodeSet := range c.NodeSets {
 		repair, err := nodeSet.Repair(c, hcloudClient)
@@ -140,7 +140,10 @@ func (c *Cluster) Repair(hcloudClient hcloud_client.Client) error {
 	return errs.OrNil()
 }
 
-func (n *NodeSet) Repair(cluster *Cluster, hcloudClient hcloud_client.Client) (serversMissing bool, errs catch.Errors) {
+func (n *NodeSet) Repair(cluster *Cluster, hcloudClient hcloud_client.Client) (bool, error) {
+	errs := &catch.Errors{}
+	serversMissing := false
+
 	nextGenerationNumber := n.Servers.MaxGeneration() + 1
 	for i := len(n.Servers); i < n.Replicas; i++ {
 		errs.Add(hcloudClient.CreateServer(env.HCloudToken(), cluster.Name, n.Name, n.ApiServer, n.NodeType, "ubuntu-20.04", nextGenerationNumber, cluster.Channel))
@@ -153,7 +156,7 @@ func (n *NodeSet) Repair(cluster *Cluster, hcloudClient hcloud_client.Client) (s
 		log.Printf("deleting server %s\n", serverToDelete)
 		errs.Add(hcloudClient.DrainAndDeleteServer(serverToDelete.Server))
 	}
-	return
+	return serversMissing, errs.OrNil()
 }
 
 func (s Servers) SortInPlace() {
