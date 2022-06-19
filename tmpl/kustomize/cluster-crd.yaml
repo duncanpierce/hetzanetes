@@ -20,8 +20,15 @@ spec:
             spec:
               type: object
               properties:
-                channel:
-                  type: string
+                versions:
+                  type: object
+                  properties:
+                    baseImage:
+                      type: string
+                    kubernetes:
+                      type: string
+                    hetzanetes:
+                      type: string
                 nodeSets:
                   type: array
                   items:

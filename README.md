@@ -39,7 +39,10 @@ kind: Cluster
 metadata:
   name: example
 spec:
-  channel: stable
+  versions:
+    baseImage: ubuntu-22.04
+    kubernetes: stable
+    hetzanetes: latest
   nodeSets:
     - name: api
       apiServer: true

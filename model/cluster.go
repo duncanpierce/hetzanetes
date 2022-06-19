@@ -24,8 +24,13 @@ type (
 		Name string `json:"name,omitempty"`
 	}
 	Spec struct {
-		Channel  string `json:"channel,omitempty"`
-		NodeSets `json:"nodeSets,omitempty"`
+		*Versions `json:"versions,omitempty"`
+		NodeSets  `json:"nodeSets,omitempty"`
+	}
+	Versions struct {
+		BaseImage  string `json:"BaseImage,omitempty"`
+		Kubernetes string `json:"kubernetes,omitempty"`
+		Hetzanetes string `json:"Hetzanetes,omitempty"`
 	}
 	Status struct {
 		*NodeSetStatuses `json:"nodeSets,omitempty"`
@@ -51,6 +56,27 @@ type (
 		ApiServer  bool
 	}
 )
+
+func (v *Versions) GetBaseImage() string {
+	if v == nil || v.BaseImage == "" {
+		return "ubuntu-22.04"
+	}
+	return v.BaseImage
+}
+
+func (v *Versions) GetKubernetes() string {
+	if v == nil || v.Kubernetes == "" {
+		return "stable"
+	}
+	return v.Kubernetes
+}
+
+func (v *Versions) GetHetzanetes() string {
+	if v == nil || v.Hetzanetes == "" {
+		return "latest"
+	}
+	return v.Hetzanetes
+}
 
 func (c *Cluster) SetServers(servers []*hcloud.Server) {
 matchServers:
@@ -146,7 +172,7 @@ func (n *NodeSet) Repair(cluster *Cluster, hcloudClient hcloud_client.Client) (b
 
 	nextGenerationNumber := n.Servers.MaxGeneration() + 1
 	for i := len(n.Servers); i < n.Replicas; i++ {
-		errs.Add(hcloudClient.CreateServer(env.HCloudToken(), cluster.Name, n.Name, n.ApiServer, n.NodeType, "ubuntu-20.04", nextGenerationNumber, cluster.Channel))
+		errs.Add(hcloudClient.CreateServer(env.HCloudToken(), cluster.Name, n.Name, n.ApiServer, n.NodeType, cluster.Versions.GetBaseImage(), nextGenerationNumber, cluster.Versions.GetKubernetes()))
 		serversMissing = true
 		nextGenerationNumber++
 	}

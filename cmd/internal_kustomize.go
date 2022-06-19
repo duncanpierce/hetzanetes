@@ -8,7 +8,8 @@ import (
 // Write files needed to configure the cluster
 func Kustomize() *cobra.Command {
 	clusterConfig := tmpl.ClusterConfig{
-		PodIpRange: "",
+		PodIpRange:    "",
+		HetzanetesTag: "latest",
 	}
 
 	cmd := &cobra.Command{
@@ -24,5 +25,8 @@ func Kustomize() *cobra.Command {
 
 	cmd.Flags().StringVar(&clusterConfig.PodIpRange, "pod-ip-range", "", "pod IP range")
 	cmd.MarkFlagRequired("pod-ip-range")
+
+	cmd.Flags().StringVar(&clusterConfig.HetzanetesTag, "hetzanetes-tag", "latest", "Hetzanetes tag")
+
 	return cmd
 }

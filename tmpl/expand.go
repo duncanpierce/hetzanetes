@@ -28,6 +28,7 @@ type ClusterConfig struct {
 	InstallDirectory  string
 	JoinToken         string
 	K3sReleaseChannel string
+	HetzanetesTag     string
 	ClusterYaml       string
 	// TODO add Version map[string]string and emit versions in files unless the key is missing
 }

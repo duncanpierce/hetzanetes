@@ -46,7 +46,7 @@ spec:
       serviceAccountName: hetzanetes-repair
       containers:
         - name: repair-cluster
-          image: duncanpierce/hetzanetes
+          image: duncanpierce/hetzanetes:{{.HetzanetesTag}}
           command: ["/hetzanetes", "internal", "repair"]
           envFrom:
             - secretRef:

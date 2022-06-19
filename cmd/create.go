@@ -10,16 +10,15 @@ import (
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"net"
+	"os"
 )
 
 func Create() *cobra.Command {
 	var dryRun bool
 	var clusterYamlFilename string
 
-	osImage := "ubuntu-22.04"
 	ipRange := net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}
 	sshPort := "22"
 	k3sApiPort := "6443"
@@ -40,7 +39,7 @@ func Create() *cobra.Command {
 				if len(args) != 0 {
 					return errors.New("cluster name must not be provided when using a cluster YAML file")
 				}
-				clusterYaml, err = ioutil.ReadFile(clusterYamlFilename)
+				clusterYaml, err = os.ReadFile(clusterYamlFilename)
 				if err != nil {
 					return err
 				}
@@ -75,7 +74,8 @@ func Create() *cobra.Command {
 				PodIpRange:        "10.42.0.0/16",
 				ServiceIpRange:    "10.43.0.0/16",
 				InstallDirectory:  "/var/opt/hetzanetes",
-				K3sReleaseChannel: cluster.Channel,
+				K3sReleaseChannel: cluster.Versions.GetKubernetes(),
+				HetzanetesTag:     cluster.Versions.GetHetzanetes(),
 				ClusterYaml:       string(clusterYaml),
 			}
 			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
@@ -115,7 +115,7 @@ func Create() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			image, _, err := c.Image.GetByName(c, osImage)
+			image, _, err := c.Image.GetByName(c, cluster.Versions.GetBaseImage())
 			if err != nil {
 				return err
 			}
