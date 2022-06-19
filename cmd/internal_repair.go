@@ -60,9 +60,9 @@ func Repair() *cobra.Command {
 					continue
 				}
 				cluster.SetServers(servers)
-				errs := cluster.Repair(hcloudClient)
-				if len(errs) > 0 {
-					log.Printf("%d errors repairing cluster: %s\n", len(errs), errs.Error())
+				err = cluster.Repair(hcloudClient)
+				if err != nil {
+					log.Printf("error repairing cluster: %s\n", err.Error())
 					continue
 				}
 			}

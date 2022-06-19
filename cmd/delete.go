@@ -48,7 +48,7 @@ func Delete() *cobra.Command {
 				// TODO retry if deletion fails?
 				errs.Catch(c.Server.Delete(c, server))
 			}
-			if len(errs) == 0 {
+			if !errs.HasErrors() {
 				errs.Catch(c.Network.Delete(c, network))
 			}
 

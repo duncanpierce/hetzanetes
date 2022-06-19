@@ -121,7 +121,8 @@ func (c *Cluster) NewestApiServer() (newest *Server) {
 	return
 }
 
-func (c *Cluster) Repair(hcloudClient hcloud_client.Client) (errs catch.Errors) {
+func (c *Cluster) Repair(hcloudClient hcloud_client.Client) error {
+	errs := catch.Errors{}
 	serversMissing := false
 	for _, nodeSet := range c.NodeSets {
 		repair, err := nodeSet.Repair(c, hcloudClient)
@@ -136,7 +137,7 @@ func (c *Cluster) Repair(hcloudClient hcloud_client.Client) (errs catch.Errors) 
 			errs.Add(hcloudClient.DrainAndDeleteServer(server))
 		}
 	}
-	return
+	return errs.OrNil()
 }
 
 func (n *NodeSet) Repair(cluster *Cluster, hcloudClient hcloud_client.Client) (serversMissing bool, errs catch.Errors) {
