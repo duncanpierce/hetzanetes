@@ -52,7 +52,7 @@ func Delete() *cobra.Command {
 				})
 			}
 			if !errs.HasErrors() {
-				errs.Retry(3, 100*time.Millisecond, func() error {
+				errs.Retry(5, 500*time.Millisecond, func() error {
 					_, err := c.Network.Delete(c, network)
 					return err
 				})
@@ -68,7 +68,7 @@ func Delete() *cobra.Command {
 }
 
 func deleteFirewall(errs *catch.Errors, c hcloud_client.Client, firewallName string) {
-	errs.Retry(3, 100*time.Millisecond, func() error {
+	errs.Retry(5, 500*time.Millisecond, func() error {
 		firewall, _, err := c.Firewall.GetByName(c, firewallName)
 		if err != nil {
 			return err

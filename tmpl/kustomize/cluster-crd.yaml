@@ -31,8 +31,16 @@ spec:
                       type: string
                 nodeSets:
                   type: array
+                  x-kubernetes-list-type: map
+                  x-kubernetes-list-map-keys:
+                    - name
                   items:
                     type: object
+                    required:
+                      - name
+                      - nodeType
+                      - replicas
+                      - locations
                     properties:
                       name:
                         type: string
@@ -54,8 +62,13 @@ spec:
               properties:
                 nodeSets:
                   type: array
+                  x-kubernetes-list-type: map
+                  x-kubernetes-list-map-keys:
+                    - name
                   items:
                     type: object
+                    required:
+                      - name
                     properties:
                       name:
                         type: string

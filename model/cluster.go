@@ -47,7 +47,7 @@ type (
 	NodeSetStatuses []*NodeSetStatus
 	NodeSetStatus   struct {
 		Name       string `json:"name"`
-		Generation int    `json:"generation"`
+		Generation int    `json:"generation,omitempty"`
 	}
 	Servers []*Server
 	Server  struct {
