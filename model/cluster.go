@@ -37,12 +37,12 @@ type (
 	}
 	NodeSets []*NodeSet
 	NodeSet  struct {
-		Name      string   `json:"name"`
-		ApiServer bool     `json:"apiServer"`
-		Replicas  int      `json:"replicas"`
-		NodeType  string   `json:"nodeType"`
-		Locations []string `json:"locations,omitempty"`
-		Servers   Servers  `json:"-"`
+		Name       string   `json:"name"`
+		ApiServer  bool     `json:"apiServer"`
+		Replicas   int      `json:"replicas"`
+		ServerType string   `json:"serverType"`
+		Locations  []string `json:"locations,omitempty"`
+		Servers    Servers  `json:"-"`
 	}
 	NodeSetStatuses []*NodeSetStatus
 	NodeSetStatus   struct {
@@ -120,6 +120,18 @@ func (c *Cluster) FirstApiServerNodeSet() *NodeSet {
 	return nil
 }
 
+func (n NodeSets) Named(name string) NodeSet {
+	for _, nodeSet := range n {
+		if nodeSet.Name == name {
+			return *nodeSet
+		}
+	}
+	return NodeSet{
+		Name:     name,
+		Replicas: 0,
+	}
+}
+
 func (n *NodeSet) ServerName(clusterName string, generation int) string {
 	return fmt.Sprintf("%s-%s-%d", clusterName, n.Name, generation)
 }
@@ -172,7 +184,7 @@ func (n *NodeSet) Repair(cluster *Cluster, hcloudClient hcloud_client.Client) (b
 
 	nextGenerationNumber := n.Servers.MaxGeneration() + 1
 	for i := len(n.Servers); i < n.Replicas; i++ {
-		errs.Add(hcloudClient.CreateServer(env.HCloudToken(), cluster.Name, n.Name, n.ApiServer, n.NodeType, cluster.Versions.GetBaseImage(), nextGenerationNumber, cluster.Versions.GetKubernetes()))
+		errs.Add(hcloudClient.CreateServer(env.HCloudToken(), cluster.Name, n.Name, n.ApiServer, n.ServerType, cluster.Versions.GetBaseImage(), nextGenerationNumber, cluster.Versions.GetKubernetes()))
 		serversMissing = true
 		nextGenerationNumber++
 	}

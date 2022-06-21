@@ -46,20 +46,20 @@ spec:
   nodeSets:
     - name: api
       apiServer: true
-      nodeType: cpx21
+      serverType: cpx21
       replicas: 3
       locations:
         - hel1
         - fsn1
         - nbg1
     - name: worker-pool-a
-      nodeType: cpx11
+      serverType: cpx11
       replicas: 2
       locations:
         - hel1
         - fsn1
     - name: worker-pool-b
-      nodeType: cpx11
+      serverType: cpx11
       replicas: 1
       locations:
         - nbg1

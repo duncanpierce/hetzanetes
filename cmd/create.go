@@ -111,7 +111,7 @@ func Create() *cobra.Command {
 			}
 			fmt.Printf("Created network %s (%s)\n", network.Name, network.IPRange.String())
 
-			serverType, _, err := c.ServerType.GetByName(c, firstApiServerNodeSet.NodeType)
+			serverType, _, err := c.ServerType.GetByName(c, firstApiServerNodeSet.ServerType)
 			if err != nil {
 				return err
 			}

@@ -38,7 +38,7 @@ spec:
                     type: object
                     required:
                       - name
-                      - nodeType
+                      - serverType
                       - replicas
                       - locations
                     properties:
@@ -46,7 +46,7 @@ spec:
                         type: string
                       apiServer:
                         type: boolean
-                      nodeType:
+                      serverType:
                         type: string
                       replicas:
                         type: integer

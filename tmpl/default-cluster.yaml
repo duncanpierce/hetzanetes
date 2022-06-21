@@ -10,7 +10,7 @@ spec:
   nodeSets:
     - name: api
       apiServer: true
-      nodeType: cpx11
+      serverType: cpx11
       replicas: 1
       locations:
         - hel1
