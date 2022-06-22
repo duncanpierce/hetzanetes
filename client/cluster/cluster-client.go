@@ -13,16 +13,16 @@ import (
 )
 
 type (
-	ClusterClient struct {
+	ClusterActions struct {
 		kubernetes *rest.Client
 		hetzner    *rest.Client
 	}
 )
 
-var _ model.Actions = ClusterClient{}
+var _ model.Actions = ClusterActions{}
 
-func NewClusterClient() *ClusterClient {
-	return &ClusterClient{
+func NewClusterClient() *ClusterActions {
+	return &ClusterActions{
 		kubernetes: NewKubernetes(),
 		hetzner:    NewHetzner(env.HCloudToken()),
 	}
@@ -62,7 +62,7 @@ func NewHetzner(token string) *rest.Client {
 	}
 }
 
-func (c ClusterClient) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error) {
+func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error) {
 	privateNetworkNumber, _ := strconv.Atoi(privateNetworkId)
 	firewalls := []HetznerFirewallRef{}
 	for _, firewallId := range firewallIds {
@@ -89,37 +89,37 @@ func (c ClusterClient) CreateServer(name string, serverType string, image string
 	return strconv.Itoa(serverResult.Server.Id), nil
 }
 
-func (f ClusterClient) DeleteServer(cloudId string) (notFound bool) {
+func (f ClusterActions) DeleteServer(cloudId string) (notFound bool) {
 	return f.hetzner.Do(http.MethodDelete, "/servers"+cloudId, nil, nil, nil) == rest.NotFound
 }
 
-func (f ClusterClient) DrainNode(name string) error {
+func (f ClusterActions) DrainNode(name string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (f ClusterClient) CheckNodeReady(name string) bool {
+func (f ClusterActions) CheckNodeReady(name string) bool {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (f ClusterClient) CheckNoNode(name string) bool {
+func (f ClusterActions) CheckNoNode(name string) bool {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (f ClusterClient) DeleteNode(name string) {
+func (f ClusterActions) DeleteNode(name string) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (f ClusterClient) GetClusterList() (*ClusterList, error) {
+func (f ClusterActions) GetClusterList() (*ClusterList, error) {
 	var clusterList ClusterList
 	err := f.kubernetes.Do(http.MethodGet, "/apis/hetzanetes.duncanpierce.org/v1/clusters", map[string]string{}, nil, &clusterList)
 	return &clusterList, err
 }
 
-func (c ClusterClient) SaveStatus(clusterName string, status *model.ClusterStatus) error {
+func (c ClusterActions) SaveStatus(clusterName string, status *model.ClusterStatus) error {
 	patch := model.Cluster{
 		Status: status,
 	}
