@@ -55,11 +55,58 @@ spec:
                         type: array
                         items:
                           type: string
-                      labels:
-                        type: object
             status:
               type: object
               properties:
+                versions:
+                  type: object
+                  properties:
+                    target:
+                      type: string
+                    nodes:
+                      type: object
+                      properties:
+                        min:
+                          type: string
+                        max:
+                          type: string
+                    api:
+                      type: object
+                      properties:
+                        min:
+                          type: string
+                        max:
+                          type: string
+                    workers:
+                      type: object
+                      properties:
+                        min:
+                          type: string
+                        max:
+                          type: string
+                    channels:
+                      type: array
+                      x-kubernetes-list-type: map
+                      x-kubernetes-list-map-keys:
+                        - name
+                      items:
+                        type: object
+                        required:
+                          - name
+                        properties:
+                          name:
+                            type: string
+                          latest:
+                            type: string
+                clusterNetwork:
+                  type: object
+                  properties:
+                    cloudId:
+                      type: string
+                    ipRange:
+                      type: string
+                baseImage:
+                  type: string
                 nodeSets:
                   type: array
                   x-kubernetes-list-type: map
@@ -74,5 +121,39 @@ spec:
                         type: string
                       generation:
                         type: integer
+                      nodes:
+                        type: array
+                        x-kubernetes-list-type: map
+                        x-kubernetes-list-map-keys:
+                          - name
+                        items:
+                          type: object
+                          required:
+                            - name
+                          properties:
+                            name:
+                              type: string
+                            serverType:
+                              type: string
+                            location:
+                              type: string
+                            created:
+                              type: string
+                            cloudId:
+                              type: string
+                            clusterIP:
+                              type: string
+                            baseImage:
+                              type: string
+                            apiServer:
+                              type: boolean
+                            version:
+                              type: string
+                            joinEndpoint:
+                              type: string
+                            phase:
+                              type: string
+                            phaseChanged:
+                              type: string
       subresources:
         status: {}

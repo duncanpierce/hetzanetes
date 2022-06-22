@@ -1,4 +1,4 @@
-package cluster
+package actions
 
 import (
 	"crypto/tls"
@@ -16,6 +16,7 @@ type (
 	ClusterActions struct {
 		kubernetes *rest.Client
 		hetzner    *rest.Client
+		k3s        *rest.Client
 	}
 )
 
@@ -25,6 +26,7 @@ func NewClusterClient() *ClusterActions {
 	return &ClusterActions{
 		kubernetes: NewKubernetes(),
 		hetzner:    NewHetzner(env.HCloudToken()),
+		k3s:        NewK3s(),
 	}
 }
 
@@ -60,6 +62,17 @@ func NewHetzner(token string) *rest.Client {
 		Http:    http.Client{},
 		Token:   token,
 	}
+}
+func NewK3s() *rest.Client {
+	return &rest.Client{
+		BaseUrl: "https://update.k3s.io/v1-release",
+		Http:    http.Client{},
+	}
+}
+
+func (c ClusterActions) GetReleaseChannels() (r ReleaseChannelStatuses, err error) {
+	err = c.k3s.Do(http.MethodGet, "/channels", nil, nil, &r)
+	return
 }
 
 func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error) {

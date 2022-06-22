@@ -53,14 +53,14 @@ func (n *NodeSetStatus) Repair(cluster *Cluster, actions Actions) {
 	for i := len(n.Find(PhaseUpTo(Active))); i < target.Replicas; i++ {
 		n.Generation++
 		node := NodeStatus{
-			Name:              fmt.Sprintf("%s-%s-%d", cluster.Metadata.Name, target.Name, n.Generation),
-			ServerType:        target.ServerType,
-			Location:          target.Locations[rand.Intn(len(target.Locations))],
-			Created:           time.Now(),
-			BaseImage:         cluster.Spec.Versions.BaseImage,
-			ApiServer:         target.ApiServer,
-			KubernetesVersion: cluster.Status.VersionStatus.NewNodeVersion(target.ApiServer),
-			JoinEndpoint:      joinEndpoint,
+			Name:         fmt.Sprintf("%s-%s-%d", cluster.Metadata.Name, target.Name, n.Generation),
+			ServerType:   target.ServerType,
+			Location:     target.Locations[rand.Intn(len(target.Locations))],
+			Created:      time.Now(),
+			BaseImage:    cluster.Spec.Versions.BaseImage,
+			ApiServer:    target.ApiServer,
+			Version:      cluster.Status.VersionStatus.NewNodeVersion(target.ApiServer),
+			JoinEndpoint: joinEndpoint,
 		}
 		node.SetPhase(Create)
 		n.AddNode(node)

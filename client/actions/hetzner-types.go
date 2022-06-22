@@ -1,4 +1,4 @@
-package cluster
+package actions
 
 type (
 	CreateHetznerServerRequest struct {

@@ -29,7 +29,9 @@ func (k *Client) DoRaw(method string, path string, headers map[string]string, re
 		return nil, err
 	}
 
-	request.Header.Add("Authorization", "Bearer "+k.Token)
+	if k.Token != "" {
+		request.Header.Add("Authorization", "Bearer "+k.Token)
+	}
 	if headers != nil {
 		for k, v := range headers {
 			request.Header.Add(k, v)

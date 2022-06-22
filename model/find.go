@@ -53,7 +53,7 @@ func (n NodeStatusRefs) MakeProgress(cluster *Cluster, actions Actions) {
 
 func (n NodeStatusRefs) GetVersionRange() (v VersionRange) {
 	for _, node := range n {
-		v = v.MergeVersion(node.KubernetesVersion)
+		v = v.MergeVersion(node.Version)
 	}
 	return
 }

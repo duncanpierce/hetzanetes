@@ -3,15 +3,16 @@ package model
 import (
 	"fmt"
 	"github.com/Masterminds/semver"
+	"github.com/duncanpierce/hetzanetes/client/actions"
 )
 
 type (
 	VersionStatus struct {
-		TargetVersion  *semver.Version            `json:"targetVersion,omitempty"`
-		NodeVersions   VersionRange               `json:"nodeVersions"`
-		ApiVersions    VersionRange               `json:"apiVersions"`
-		WorkerVersions VersionRange               `json:"workerVersions"`
-		Channels       map[string]*semver.Version `json:"channels,omitempty"` // gathered from https://update.k3s.io/v1-release/channels
+		TargetVersion  *semver.Version                `json:"target,omitempty"`
+		NodeVersions   VersionRange                   `json:"nodes"`
+		ApiVersions    VersionRange                   `json:"api"`
+		WorkerVersions VersionRange                   `json:"workers"`
+		Channels       actions.ReleaseChannelStatuses `json:"channels,omitempty"` // gathered from https://update.k3s.io/v1-release/channels
 	}
 
 	VersionRange struct {
@@ -80,9 +81,9 @@ func (v VersionStatus) NewApiNodeVersion() *semver.Version {
 	}
 
 	// Otherwise, we can't directly upgrade because there is too much version skew, so look for the current release in the channel of the max allowed version
-	upgradeVersion, found := v.Channels[fmt.Sprint("v%d.%d", maxAllowable.Major(), maxAllowable.Minor())]
-	if found {
-		return upgradeVersion
+	channel := v.Channels.Named(fmt.Sprintf("v%d.%d", maxAllowable.Major(), maxAllowable.Minor()))
+	if channel != nil {
+		return channel.Latest
 	}
 
 	// If all that fails, there is nothing we can do other than try to match the max API server version

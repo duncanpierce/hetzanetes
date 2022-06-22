@@ -8,9 +8,9 @@ import (
 
 type (
 	ClusterStatus struct {
-		VersionStatus   `json:"versionStatus"`
+		VersionStatus   `json:"versions"`
 		ClusterNetwork  ClusterNetworkStatus `json:"clusterNetwork"`
-		CloudBaseImage  string               `json:"cloudBaseImage,omitempty"`
+		BaseImage       string               `json:"baseImage,omitempty"`
 		NodeSetStatuses `json:"nodeSets,omitempty"`
 	}
 	ClusterNetworkStatus struct {
@@ -26,18 +26,18 @@ type (
 	NodeStatuses   []NodeStatus
 	NodeStatusRefs []*NodeStatus
 	NodeStatus     struct {
-		Name              string          `json:"name"`
-		ServerType        string          `json:"serverType"`
-		Location          string          `json:"location"`
-		Created           time.Time       `json:"created"`
-		CloudId           string          `json:"cloudId,omitempty"`
-		ClusterIP         string          `json:"clusterIP,omitempty"`
-		BaseImage         string          `json:"baseImage,omitempty"`
-		ApiServer         bool            `json:"apiServer,omitempty"`
-		KubernetesVersion *semver.Version `json:"kubernetesVersion,omitempty"`
-		JoinEndpoint      string          `json:"joinEndpoint,omitempty"`
-		Phase             `json:"phase"`
-		PhaseChanged      time.Time `json:"phaseChanged"`
+		Name         string          `json:"name"`
+		ServerType   string          `json:"serverType"`
+		Location     string          `json:"location"`
+		Created      time.Time       `json:"created"`
+		CloudId      string          `json:"cloudId,omitempty"`
+		ClusterIP    string          `json:"clusterIP,omitempty"`
+		BaseImage    string          `json:"baseImage,omitempty"`
+		ApiServer    bool            `json:"apiServer,omitempty"`
+		Version      *semver.Version `json:"version,omitempty"`
+		JoinEndpoint string          `json:"joinEndpoint,omitempty"`
+		Phase        `json:"phase"`
+		PhaseChanged time.Time `json:"phaseChanged"`
 	}
 	Phase string
 
