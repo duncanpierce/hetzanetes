@@ -57,7 +57,7 @@ func Create() *cobra.Command {
 				return err
 			}
 
-			firstApiServerNodeSet := cluster.FirstApiServerNodeSet()
+			firstApiServerNodeSet := cluster.Spec.NodeSets.FirstApiServerNodeSet()
 			if firstApiServerNodeSet == nil {
 				return errors.New("cluster specifies no API servers")
 			}

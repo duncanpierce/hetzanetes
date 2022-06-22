@@ -2,6 +2,15 @@ package model
 
 import "fmt"
 
+func (n NodeSetsSpec) FirstApiServerNodeSet() *NodeSetSpec {
+	for _, nodeSet := range n {
+		if nodeSet.ApiServer {
+			return nodeSet
+		}
+	}
+	return nil
+}
+
 func (n NodeSetsSpec) Named(name string) NodeSetSpec {
 	for _, nodeSet := range n {
 		if nodeSet.Name == name {
