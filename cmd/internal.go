@@ -18,7 +18,6 @@ func Internal() *cobra.Command {
 		Spike(),
 		Repair(),
 		Net(),
-		Watch(),
 	)
 	return cmd
 }

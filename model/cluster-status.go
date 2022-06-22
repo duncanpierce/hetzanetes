@@ -1,14 +1,4 @@
-package repair
-
-import "github.com/duncanpierce/hetzanetes/model"
-
-func (c *ClusterStatus) Repair(cluster *model.Cluster, actions Actions) {
-	c.UpdateVersionRanges()
-	for _, nodeSet := range c.NodeSetStatuses {
-		nodeSet.Repair(c, cluster, actions)
-	}
-	c.UpdateVersionRanges()
-}
+package model
 
 func (c *ClusterStatus) UpdateVersionRanges() {
 	api := VersionRange{}

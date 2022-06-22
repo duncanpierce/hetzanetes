@@ -65,17 +65,17 @@ func Create() *cobra.Command {
 			c := hcloud_client.New()
 			apiToken := env.HCloudToken()
 			labels := label.Labels{}
-			labels[label.ClusterNameLabel] = cluster.Name
+			labels[label.ClusterNameLabel] = cluster.Metadata.Name
 
 			serverConfig := tmpl.ClusterConfig{
 				HetznerApiToken:   apiToken,
-				ClusterName:       cluster.Name,
+				ClusterName:       cluster.Metadata.Name,
 				PrivateIpRange:    ipRange.String(),
 				PodIpRange:        "10.42.0.0/16",
 				ServiceIpRange:    "10.43.0.0/16",
 				InstallDirectory:  "/var/opt/hetzanetes",
-				K3sReleaseChannel: cluster.Versions.GetKubernetes(),
-				HetzanetesTag:     cluster.Versions.GetHetzanetes(),
+				K3sReleaseChannel: cluster.Spec.Versions.GetKubernetes(),
+				HetzanetesTag:     cluster.Spec.Versions.GetHetzanetes(),
 				ClusterYaml:       string(clusterYaml),
 			}
 			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
@@ -100,7 +100,7 @@ func Create() *cobra.Command {
 			// TODO protect this network - it could be difficult to repair if deleted (e.g. server gets a new interface flannel doesn't know about)
 			networkLabels := labels.Copy().Mark(label.PrivateNetworkLabel)
 			network, _, err := c.Network.Create(c, hcloud.NetworkCreateOpts{
-				Name:    cluster.Name,
+				Name:    cluster.Metadata.Name,
 				IPRange: &ipRange,
 				Subnets: subnets,
 				Routes:  nil,
@@ -115,14 +115,14 @@ func Create() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			image, _, err := c.Image.GetByName(c, cluster.Versions.GetBaseImage())
+			image, _, err := c.Image.GetByName(c, cluster.Spec.Versions.GetBaseImage())
 			if err != nil {
 				return err
 			}
 
 			_, allIPv4, _ := net.ParseCIDR("0.0.0.0/0")
 			_, allIPv6, _ := net.ParseCIDR("::/0")
-			clusterSelector := label.ClusterNameLabel + "==" + cluster.Name
+			clusterSelector := label.ClusterNameLabel + "==" + cluster.Metadata.Name
 			firewallRules := []hcloud.FirewallRule{
 				{
 					Protocol:  hcloud.FirewallRuleProtocolICMP,
@@ -137,7 +137,7 @@ func Create() *cobra.Command {
 				},
 			}
 			_, _, err = c.Firewall.Create(c, hcloud.FirewallCreateOpts{
-				Name:  cluster.Name + "-worker",
+				Name:  cluster.Metadata.Name + "-worker",
 				Rules: firewallRules,
 				ApplyTo: []hcloud.FirewallResource{
 					{
@@ -159,7 +159,7 @@ func Create() *cobra.Command {
 				Direction: hcloud.FirewallRuleDirectionIn,
 			})
 			_, _, err = c.Firewall.Create(c, hcloud.FirewallCreateOpts{
-				Name:  cluster.Name + "-api",
+				Name:  cluster.Metadata.Name + "-api",
 				Rules: firewallRules,
 				ApplyTo: []hcloud.FirewallResource{
 					{
@@ -181,7 +181,7 @@ func Create() *cobra.Command {
 
 			t := true
 			serverCreateResult, _, err := c.Server.Create(c, hcloud.ServerCreateOpts{
-				Name:             firstApiServerNodeSet.ServerName(cluster.Name, 1),
+				Name:             firstApiServerNodeSet.ServerName(cluster.Metadata.Name, 1),
 				ServerType:       serverType,
 				Image:            image,
 				SSHKeys:          sshKeys,

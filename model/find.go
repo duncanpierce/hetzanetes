@@ -1,4 +1,4 @@
-package repair
+package model
 
 import (
 	"sort"
@@ -6,6 +6,13 @@ import (
 )
 
 type Filter func(n NodeStatus) bool
+
+func (c *ClusterStatus) Find(filters ...Filter) (nodes NodeStatusRefs) {
+	for _, nodeSet := range c.NodeSetStatuses {
+		nodes = append(nodes, nodeSet.Find(filters...)...)
+	}
+	return
+}
 
 func (n *NodeStatuses) Find(filters ...Filter) (nodes NodeStatusRefs) {
 	for _, node := range *n {
@@ -25,11 +32,36 @@ func (n NodeStatusRefs) SortByPhase() {
 	})
 }
 
+// SortByRecency returns most recent first
+func (n NodeStatusRefs) SortByRecency() {
+	sort.SliceStable(n, func(i, j int) bool {
+		return (n[j].PhaseChanged).Before(n[i].PhaseChanged)
+	})
+}
+
+func (n NodeStatusRefs) SetPhase(phase Phase) {
+	for i := 0; i < len(n); i++ {
+		n[i].SetPhase(phase)
+	}
+}
+
+func (n NodeStatusRefs) MakeProgress(cluster *Cluster, actions Actions) {
+	for _, node := range n {
+		node.MakeProgress(cluster, actions)
+	}
+}
+
 func (n NodeStatusRefs) GetVersionRange() (v VersionRange) {
 	for _, node := range n {
 		v = v.MergeVersion(node.KubernetesVersion)
 	}
 	return
+}
+
+func MatchAll() Filter {
+	return func(node NodeStatus) bool {
+		return true
+	}
 }
 
 func InPhase(phases ...Phase) Filter {

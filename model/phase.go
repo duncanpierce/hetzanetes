@@ -1,4 +1,4 @@
-package repair
+package model
 
 const (
 	// until we switch to SSH, the flow is simpler and misses some setup steps which are done by Cloudinit

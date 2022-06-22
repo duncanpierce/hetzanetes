@@ -1,14 +1,32 @@
-package repair
+package model
 
 import (
 	"fmt"
-	"github.com/duncanpierce/hetzanetes/model"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"time"
 )
 
-func (n *NodeSetStatus) Repair(clusterStatus *ClusterStatus, cluster *model.Cluster, actions Actions) {
-	target := cluster.NodeSets.Named(n.Name)
+func (n NodeSetStatuses) Named(name string) *NodeSetStatus {
+	for _, nodeSetStatus := range n {
+		if nodeSetStatus.Name == name {
+			return nodeSetStatus
+		}
+	}
+	return nil
+}
+
+func (n *NodeSetStatuses) CreateIfNecessary(spec *NodeSetSpec) {
+	if n.Named(spec.Name) == nil {
+		*n = append(*n, &NodeSetStatus{
+			Name:         spec.Name,
+			Generation:   0,
+			NodeStatuses: NodeStatuses{},
+		})
+	}
+}
+
+func (n *NodeSetStatus) Repair(cluster *Cluster, actions Actions) {
+	target := cluster.Spec.NodeSets.Named(n.Name)
 
 	// Mark for deletion any stuck nodes:
 	n.Find(PhaseUpTo(Joining), LongerThan(10*time.Minute)).SetPhase(Delete)
@@ -27,16 +45,22 @@ func (n *NodeSetStatus) Repair(clusterStatus *ClusterStatus, cluster *model.Clus
 	// Create nodes to make up any shortfall against target.Replicas
 	// excludes nodes marked for replacement
 	// TODO implement maxSurge: limit
+
+	apiServers := cluster.Status.Find(InPhase(Active), IsApiServer(true))
+	apiServers.SortByRecency()
+	joinEndpoint := fmt.Sprintf("https://%s:6443", apiServers[0].ClusterIP)
+
 	for i := len(n.Find(PhaseUpTo(Active))); i < target.Replicas; i++ {
 		n.Generation++
 		node := NodeStatus{
-			Name:              fmt.Sprintf("%s-%s-%d", cluster.Name, target.Name, n.Generation),
+			Name:              fmt.Sprintf("%s-%s-%d", cluster.Metadata.Name, target.Name, n.Generation),
 			ServerType:        target.ServerType,
 			Location:          target.Locations[rand.Intn(len(target.Locations))],
 			Created:           time.Now(),
-			BaseImage:         cluster.Versions.BaseImage,
+			BaseImage:         cluster.Spec.Versions.BaseImage,
 			ApiServer:         target.ApiServer,
-			KubernetesVersion: nil, // TODO compute highest allowed version
+			KubernetesVersion: cluster.Status.VersionStatus.NewNodeVersion(target.ApiServer),
+			JoinEndpoint:      joinEndpoint,
 		}
 		node.SetPhase(Create)
 		n.AddNode(node)
@@ -47,18 +71,11 @@ func (n *NodeSetStatus) Repair(clusterStatus *ClusterStatus, cluster *model.Clus
 	// need to take care, because moving a creating node to delete phase means an unpredictable set of actions have already taken place
 	// NB there is a race for Joining nodes but not others, provided the phase change isn't happening in a separate controller
 
-	// TODO don't delete an API node which has been assigned as the registration node for a not-yet-ready node
+	// TODO don't delete an API node which has been assigned as the join endpoint for a not-yet-ready node
 
 	readyNodes := n.Find(InPhase(Active))
 	numberOfUnwantedNodes := len(readyNodes) - target.Replicas
 	if numberOfUnwantedNodes > 0 {
 		readyNodes[:numberOfUnwantedNodes].SetPhase(Delete)
 	}
-
-	// Action phase change for all nodes
-	for _, node := range n.NodeStatuses {
-		node.NextAction(clusterStatus, n, actions)
-	}
-
-	// TODO write status (changes) back to K8s API
 }

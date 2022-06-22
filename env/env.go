@@ -20,3 +20,11 @@ func HCloudToken() string {
 func HCloudNetwork() string {
 	return Get("HCLOUD_NETWORK", "a Hetzner cloud network name")
 }
+
+func K3sToken() string {
+	return Get("K3S_TOKEN", "a K3s join token")
+}
+
+func K3sEndpoint() string {
+	return Get("K3S_URL", "a K3s API server endpoint")
+}

@@ -1,11 +1,7 @@
 package cmd
 
 import (
-	"context"
-	"github.com/duncanpierce/hetzanetes/hcloud_client"
-	"github.com/duncanpierce/hetzanetes/k8s_client"
-	"github.com/duncanpierce/hetzanetes/label"
-	"github.com/duncanpierce/hetzanetes/model"
+	"github.com/duncanpierce/hetzanetes/client/cluster"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"log"
@@ -22,11 +18,9 @@ func Repair() *cobra.Command {
 		Use:   "repair",
 		Short: "Repair the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-			k8sClient := k8s_client.New()
-			hcloudClient := hcloud_client.New()
+			actions := cluster.NewClusterClient()
 			for range time.NewTicker(10 * time.Second).C {
-				clusterList, err := k8sClient.GetClusterList()
+				clusterList, err := actions.GetClusterList()
 				if err != nil {
 					log.Printf("error getting clusters: %s\n", err.Error())
 					continue
@@ -36,31 +30,13 @@ func Repair() *cobra.Command {
 					continue
 				}
 				cluster := clusterList.Items[0]
-
-				// TODO remove this spike
-				err = k8sClient.SaveStatus(cluster.Name, &model.Status{
-					NodeSetStatuses: &model.NodeSetStatuses{
-						&model.NodeSetStatus{
-							Name:       "api",
-							Generation: 1,
-						},
-					},
-				})
-				if err != nil {
-					log.Printf("error updating status of cluster %s: %s\n", cluster.Name, err.Error())
-				}
-
-				servers, err := hcloudClient.Server.AllWithOpts(ctx, hcloud.ServerListOpts{
-					ListOpts: hcloud.ListOpts{
-						LabelSelector: label.ClusterNameLabel + "=" + cluster.Name,
-					},
-				})
 				if err != nil {
 					log.Printf("error getting servers: %s\n", err.Error())
 					continue
 				}
-				cluster.SetServers(servers)
-				err = cluster.Repair(hcloudClient)
+
+				err = cluster.Repair(actions)
+
 				if err != nil {
 					log.Printf("error repairing cluster: %s\n", err.Error())
 					continue

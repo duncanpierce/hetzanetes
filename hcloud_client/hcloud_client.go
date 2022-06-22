@@ -8,7 +8,6 @@ import (
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
-	"os"
 )
 
 type Client struct {
@@ -46,8 +45,8 @@ func (c Client) CreateServer(apiToken string, clusterName string, nodeSetName st
 	ipRange := network.Subnets[0].IPRange
 
 	clusterConfig := tmpl.ClusterConfig{
-		JoinToken:         os.Getenv("K3S_TOKEN"),
-		ApiEndpoint:       os.Getenv("K3S_URL"),
+		JoinToken:         env.K3sToken(),
+		ApiEndpoint:       env.K3sEndpoint(),
 		HetznerApiToken:   apiToken,
 		ClusterName:       clusterName,
 		PrivateIpRange:    ipRange.String(),

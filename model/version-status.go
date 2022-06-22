@@ -1,4 +1,4 @@
-package repair
+package model
 
 import (
 	"fmt"
@@ -47,6 +47,13 @@ func (v VersionRange) MergeRange(other VersionRange) VersionRange {
 
 func (v VersionRange) MergeVersion(other *semver.Version) VersionRange {
 	return v.MergeRange(VersionRange{other, other})
+}
+
+func (v VersionStatus) NewNodeVersion(apiServer bool) *semver.Version {
+	if apiServer {
+		return v.NewApiNodeVersion()
+	}
+	return v.NewWorkerNodeVersion()
 }
 
 func (v VersionStatus) NewWorkerNodeVersion() *semver.Version {
