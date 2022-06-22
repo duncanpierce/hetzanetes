@@ -1,4 +1,4 @@
-package actions
+package model
 
 type (
 	CreateHetznerServerRequest struct {

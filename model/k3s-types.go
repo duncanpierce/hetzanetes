@@ -1,4 +1,4 @@
-package actions
+package model
 
 import "github.com/Masterminds/semver"
 

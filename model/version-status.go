@@ -3,16 +3,15 @@ package model
 import (
 	"fmt"
 	"github.com/Masterminds/semver"
-	"github.com/duncanpierce/hetzanetes/client/actions"
 )
 
 type (
 	VersionStatus struct {
-		Target   *semver.Version                `json:"target,omitempty"`
-		Nodes    VersionRange                   `json:"nodes"`
-		Api      VersionRange                   `json:"api"`
-		Workers  VersionRange                   `json:"workers"`
-		Channels actions.ReleaseChannelStatuses `json:"channels,omitempty"` // gathered from https://update.k3s.io/v1-release/channels
+		Target   *semver.Version        `json:"target,omitempty"`
+		Nodes    VersionRange           `json:"nodes"`
+		Api      VersionRange           `json:"api"`
+		Workers  VersionRange           `json:"workers"`
+		Channels ReleaseChannelStatuses `json:"channels,omitempty"` // gathered from https://update.k3s.io/v1-release/channels
 	}
 
 	VersionRange struct {

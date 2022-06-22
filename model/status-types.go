@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/Masterminds/semver"
-	"github.com/duncanpierce/hetzanetes/client/actions"
 	"github.com/duncanpierce/hetzanetes/label"
 	"time"
 )
@@ -42,7 +41,7 @@ type (
 	Phase string
 
 	Actions interface {
-		GetReleaseChannels() (actions.ReleaseChannelStatuses, error)
+		GetReleaseChannels() (ReleaseChannelStatuses, error)
 		CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error)
 		DeleteServer(cloudId string) (notFound bool)
 		DrainNode(name string) error

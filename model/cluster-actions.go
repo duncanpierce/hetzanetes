@@ -1,12 +1,11 @@
-package actions
+package model
 
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/duncanpierce/hetzanetes/client/rest"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
-	"github.com/duncanpierce/hetzanetes/model"
+	"github.com/duncanpierce/hetzanetes/rest"
 	"net/http"
 	"os"
 	"strconv"
@@ -20,7 +19,7 @@ type (
 	}
 )
 
-var _ model.Actions = ClusterActions{}
+var _ Actions = ClusterActions{}
 
 func NewClusterClient() *ClusterActions {
 	return &ClusterActions{
@@ -132,8 +131,8 @@ func (f ClusterActions) GetClusterList() (*ClusterList, error) {
 	return &clusterList, err
 }
 
-func (c ClusterActions) SaveStatus(clusterName string, status *model.ClusterStatus) error {
-	patch := model.Cluster{
+func (c ClusterActions) SaveStatus(clusterName string, status *ClusterStatus) error {
+	patch := Cluster{
 		Status: status,
 	}
 	headers := map[string]string{
