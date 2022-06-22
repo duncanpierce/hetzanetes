@@ -21,6 +21,14 @@ func HCloudNetwork() string {
 	return Get("HCLOUD_NETWORK", "a Hetzner cloud network name")
 }
 
+func HCloudNetworkId() string {
+	return Get("HCLOUD_NETWORK_ID", "a Hetzner cloud network id")
+}
+
+func HCloudNetworkIpRange() string {
+	return Get("HCLOUD_NETWORK_IP_RANGE", "IP range of cluster network")
+}
+
 func K3sToken() string {
 	return Get("K3S_TOKEN", "a K3s join token")
 }

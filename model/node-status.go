@@ -29,9 +29,8 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 			templateToUse = "add-worker.yaml"
 			labels.Mark(label.WorkerLabel)
 		}
-		// TODO these cloudinit scripts need .ApiEndpoint, .JoinToken, .PrivateIpRange, .K3sReleaseChannel <- should be VERSION
 		config := tmpl.ClusterConfig{
-			KubernetesVersion: cluster.Status.TargetVersion.String(),
+			KubernetesVersion: cluster.Status.Versions.Target.String(),
 			ApiEndpoint:       n.JoinEndpoint,
 			JoinToken:         env.K3sToken(), // TODO this should come from a named Secret
 			PrivateIpRange:    cluster.Status.ClusterNetwork.IpRange,

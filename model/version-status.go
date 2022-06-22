@@ -8,11 +8,11 @@ import (
 
 type (
 	VersionStatus struct {
-		TargetVersion  *semver.Version                `json:"target,omitempty"`
-		NodeVersions   VersionRange                   `json:"nodes"`
-		ApiVersions    VersionRange                   `json:"api"`
-		WorkerVersions VersionRange                   `json:"workers"`
-		Channels       actions.ReleaseChannelStatuses `json:"channels,omitempty"` // gathered from https://update.k3s.io/v1-release/channels
+		Target   *semver.Version                `json:"target,omitempty"`
+		Nodes    VersionRange                   `json:"nodes"`
+		Api      VersionRange                   `json:"api"`
+		Workers  VersionRange                   `json:"workers"`
+		Channels actions.ReleaseChannelStatuses `json:"channels,omitempty"` // gathered from https://update.k3s.io/v1-release/channels
 	}
 
 	VersionRange struct {
@@ -58,26 +58,26 @@ func (v VersionStatus) NewNodeVersion(apiServer bool) *semver.Version {
 }
 
 func (v VersionStatus) NewWorkerNodeVersion() *semver.Version {
-	return v.ApiVersions.Min
+	return v.Api.Min
 }
 
 func (v VersionStatus) NewApiNodeVersion() *semver.Version {
 	// If there are a mix of different versions, drive new API servers towards the same version
-	if !v.ApiVersions.Same() {
-		return v.ApiVersions.Max
+	if !v.Api.Same() {
+		return v.Api.Max
 	}
 
 	// Target version can't be a downgrade for any node in the cluster
-	if v.TargetVersion.Major() < v.NodeVersions.Max.Major() || v.TargetVersion.Minor() <= v.NodeVersions.Max.Minor() {
-		return v.NodeVersions.Max
+	if v.Target.Major() < v.Nodes.Max.Major() || v.Target.Minor() <= v.Nodes.Max.Minor() {
+		return v.Nodes.Max
 	}
 
 	// Treat the max allowable version as a minor increment above the lowest version of any node in the cluster
-	maxAllowable := VersionMin(v.ApiVersions.Min, v.WorkerVersions.Min).IncMinor()
+	maxAllowable := VersionMin(v.Api.Min, v.Workers.Min).IncMinor()
 
 	// If target version satisfies the max allowed, use that
-	if v.TargetVersion.Major() == maxAllowable.Major() && v.TargetVersion.Minor() <= maxAllowable.Minor() {
-		return v.TargetVersion
+	if v.Target.Major() == maxAllowable.Major() && v.Target.Minor() <= maxAllowable.Minor() {
+		return v.Target
 	}
 
 	// Otherwise, we can't directly upgrade because there is too much version skew, so look for the current release in the channel of the max allowed version
@@ -87,5 +87,20 @@ func (v VersionStatus) NewApiNodeVersion() *semver.Version {
 	}
 
 	// If all that fails, there is nothing we can do other than try to match the max API server version
-	return v.ApiVersions.Max
+	return v.Api.Max
+}
+
+func (v *VersionStatus) UpdateReleaseChannels(releaseChannel string, actions Actions) error {
+	channels, err := actions.GetReleaseChannels()
+	if err != nil {
+		return err
+	}
+	v.Channels = channels
+
+	targetVersion := channels.Named(releaseChannel)
+	if targetVersion == nil {
+		return fmt.Errorf("cannot find a release for channel %s", releaseChannel)
+	}
+	v.Target = targetVersion.Latest
+	return nil
 }

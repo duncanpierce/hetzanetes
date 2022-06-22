@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/duncanpierce/hetzanetes/client/cluster"
+	"github.com/duncanpierce/hetzanetes/client/actions"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"log"
@@ -18,9 +18,9 @@ func Repair() *cobra.Command {
 		Use:   "repair",
 		Short: "Repair the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			actions := cluster.NewClusterClient()
+			act := actions.NewClusterClient()
 			for range time.NewTicker(10 * time.Second).C {
-				clusterList, err := actions.GetClusterList()
+				clusterList, err := act.GetClusterList()
 				if err != nil {
 					log.Printf("error getting clusters: %s\n", err.Error())
 					continue
@@ -35,7 +35,7 @@ func Repair() *cobra.Command {
 					continue
 				}
 
-				err = cluster.Repair(actions)
+				err = cluster.Repair(act)
 
 				if err != nil {
 					log.Printf("error repairing cluster: %s\n", err.Error())

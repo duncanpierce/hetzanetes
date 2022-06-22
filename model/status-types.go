@@ -2,15 +2,15 @@ package model
 
 import (
 	"github.com/Masterminds/semver"
+	"github.com/duncanpierce/hetzanetes/client/actions"
 	"github.com/duncanpierce/hetzanetes/label"
 	"time"
 )
 
 type (
 	ClusterStatus struct {
-		VersionStatus   `json:"versions"`
+		Versions        VersionStatus        `json:"versions"`
 		ClusterNetwork  ClusterNetworkStatus `json:"clusterNetwork"`
-		BaseImage       string               `json:"baseImage,omitempty"`
 		NodeSetStatuses `json:"nodeSets,omitempty"`
 	}
 	ClusterNetworkStatus struct {
@@ -42,6 +42,7 @@ type (
 	Phase string
 
 	Actions interface {
+		GetReleaseChannels() (actions.ReleaseChannelStatuses, error)
 		CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error)
 		DeleteServer(cloudId string) (notFound bool)
 		DrainNode(name string) error

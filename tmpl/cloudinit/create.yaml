@@ -1,7 +1,7 @@
 {{template "update-packages.yaml" .}}
 runcmd:
   - curl -sfL 'https://get.k3s.io' | INSTALL_K3S_CHANNEL={{.K3sReleaseChannel}} sh -s - server --cluster-init {{template "api-common-config.sh" .}} --flannel-iface={{template "get-private-interface.sh" .}}
-  - kubectl create secret generic hcloud -n kube-system --from-literal=HCLOUD_TOKEN={{.HetznerApiToken}} --from-literal=HCLOUD_NETWORK={{.ClusterName}}
+  - kubectl create secret generic hcloud -n kube-system --from-literal=HCLOUD_TOKEN={{.HetznerApiToken}} --from-literal=HCLOUD_NETWORK={{.ClusterName}} --from-literal=HCLOUD_NETWORK_ID={{.ClusterNetworkId}} --from-literal=HCLOUD_NETWORK_IP_RANGE={{.PrivateIpRange}}
   - kubectl create secret generic k3s -n kube-system --from-file=K3S_TOKEN=/var/lib/rancher/k3s/server/token --from-literal=K3S_URL="https://{{template "get-private-ip-address.sh" .}}:6443"
   - mkdir {{.InstallDirectory}}
   - docker run -v {{.InstallDirectory}}:/install -w /install duncanpierce/hetzanetes:{{.HetzanetesTag}} internal kustomize --pod-ip-range={{.PodIpRange}} --hetzanetes-tag={{.HetzanetesTag}}

@@ -23,6 +23,7 @@ type ClusterConfig struct {
 	HetznerApiToken   string
 	ClusterName       string
 	PrivateIpRange    string // TODO define IpRange map[string]string and read as {{.IpRange.PrivateNetwork}} etc - maybe rename to ClusterNetwork
+	ClusterNetworkId  string
 	PodIpRange        string
 	ServiceIpRange    string
 	InstallDirectory  string

@@ -57,9 +57,9 @@ func (n *NodeSetStatus) Repair(cluster *Cluster, actions Actions) {
 			ServerType:   target.ServerType,
 			Location:     target.Locations[rand.Intn(len(target.Locations))],
 			Created:      time.Now(),
-			BaseImage:    cluster.Spec.Versions.BaseImage,
+			BaseImage:    cluster.Spec.Versions.GetBaseImage(),
 			ApiServer:    target.ApiServer,
-			Version:      cluster.Status.VersionStatus.NewNodeVersion(target.ApiServer),
+			Version:      cluster.Status.Versions.NewNodeVersion(target.ApiServer),
 			JoinEndpoint: joinEndpoint,
 		}
 		node.SetPhase(Create)

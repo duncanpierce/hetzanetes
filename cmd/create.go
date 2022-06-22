@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"net"
 	"os"
+	"strconv"
 )
 
 func Create() *cobra.Command {
-	var dryRun bool
 	var clusterYamlFilename string
 
 	ipRange := net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}
@@ -59,31 +59,13 @@ func Create() *cobra.Command {
 
 			firstApiServerNodeSet := cluster.FirstApiServerNodeSet()
 			if firstApiServerNodeSet == nil {
-				return errors.New("no API servers specified")
+				return errors.New("cluster specifies no API servers")
 			}
 
 			c := hcloud_client.New()
 			apiToken := env.HCloudToken()
 			labels := label.Labels{}
 			labels[label.ClusterNameLabel] = cluster.Metadata.Name
-
-			serverConfig := tmpl.ClusterConfig{
-				HetznerApiToken:   apiToken,
-				ClusterName:       cluster.Metadata.Name,
-				PrivateIpRange:    ipRange.String(),
-				PodIpRange:        "10.42.0.0/16",
-				ServiceIpRange:    "10.43.0.0/16",
-				InstallDirectory:  "/var/opt/hetzanetes",
-				K3sReleaseChannel: cluster.Spec.Versions.GetKubernetes(),
-				HetzanetesTag:     cluster.Spec.Versions.GetHetzanetes(),
-				ClusterYaml:       string(clusterYaml),
-			}
-			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
-
-			if dryRun {
-				fmt.Printf("Would create server with cloud-init file\n%s\n", cloudInit)
-				return nil
-			}
 
 			// TODO check for name collisions on network and API server before starting, and also on server and network labels
 			// TODO split this out behind a driver interface to allow --dry-run
@@ -109,7 +91,21 @@ func Create() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Created network %s (%s)\n", network.Name, network.IPRange.String())
+			fmt.Printf("Created network %d %s (%s)\n", network.ID, network.Name, network.IPRange.String())
+
+			serverConfig := tmpl.ClusterConfig{
+				HetznerApiToken:   apiToken,
+				ClusterName:       cluster.Metadata.Name,
+				ClusterNetworkId:  strconv.Itoa(network.ID),
+				PrivateIpRange:    ipRange.String(),
+				PodIpRange:        "10.42.0.0/16",
+				ServiceIpRange:    "10.43.0.0/16",
+				InstallDirectory:  "/var/opt/hetzanetes",
+				K3sReleaseChannel: cluster.Spec.Versions.GetKubernetes(),
+				HetzanetesTag:     cluster.Spec.Versions.GetHetzanetes(),
+				ClusterYaml:       string(clusterYaml),
+			}
+			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
 
 			serverType, _, err := c.ServerType.GetByName(c, firstApiServerNodeSet.ServerType)
 			if err != nil {
@@ -198,7 +194,6 @@ func Create() *cobra.Command {
 			return c.Await(serverCreateResult.Action)
 		},
 	}
-	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show what would be done without taking any action")
 	cmd.Flags().StringVarP(&clusterYamlFilename, "filename", "f", "", "Name of YAML file specifying cluster configuration")
 	return cmd
 }
