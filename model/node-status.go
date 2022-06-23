@@ -7,10 +7,11 @@ import (
 	"time"
 )
 
-func (n *NodeStatus) SetPhase(phase Phase) {
+func (n *NodeStatus) SetPhase(phase Phase, reason string) {
 	n.Phases = append(n.Phases, PhaseChange{
-		Phase: phase,
-		Time:  time.Now(),
+		Phase:  phase,
+		Reason: reason,
+		Time:   time.Now(),
 	})
 }
 
@@ -41,32 +42,32 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 
 		n.CloudId, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, nil, cloudInit)
 		if err == nil {
-			n.SetPhase(Joining) // TODO once we use SSH, next phase will be Creating
+			n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
 		}
 
 	case Joining:
 		ready := actions.CheckNodeReady(*n)
 		if ready {
-			n.SetPhase(Active)
+			n.SetPhase(Active, "node has joined")
 		}
 
 	case Delete:
 		err = actions.DrainNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering - even if we check whether node has registered and answer is no, we still can't proceed because it's racing us
 		if err == nil {
-			n.SetPhase(Draining)
+			n.SetPhase(Draining, "")
 		}
 
 	case Draining:
 		if LongerThan(5 * time.Minute)(*n) {
 			actions.DeleteNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering
-			n.SetPhase(Deleting)
+			n.SetPhase(Deleting, "")
 		}
 
 	case Deleting:
 		if actions.CheckNoNode(n.Name) {
 			notFound := actions.DeleteServer(n.CloudId)
 			if notFound {
-				n.SetPhase(Deleted)
+				n.SetPhase(Deleted, "")
 			}
 		}
 

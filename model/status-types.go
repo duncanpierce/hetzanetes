@@ -38,7 +38,8 @@ type (
 	Phase        string
 	PhaseChanges []PhaseChange
 	PhaseChange  struct {
-		Phase Phase     `json:"phase"`
-		Time  time.Time `json:"time"`
+		Phase  Phase     `json:"phase"`
+		Time   time.Time `json:"time"`
+		Reason string    `json:"reason,omitempty"`
 	}
 )

@@ -96,8 +96,9 @@ func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion
 		Version:    kubernetesVersion,
 		Phases: PhaseChanges{
 			PhaseChange{
-				Phase: Active,
-				Time:  server.Created,
+				Phase:  Active,
+				Reason: "bootstrapped",
+				Time:   server.Created,
 			},
 		},
 	}, nil

@@ -42,9 +42,9 @@ func (n NodeStatusRefs) SortByRecency() {
 	})
 }
 
-func (n NodeStatusRefs) SetPhase(phase Phase) {
+func (n NodeStatusRefs) SetPhase(phase Phase, reason string) {
 	for i := 0; i < len(n); i++ {
-		n[i].SetPhase(phase)
+		n[i].SetPhase(phase, reason)
 	}
 }
 

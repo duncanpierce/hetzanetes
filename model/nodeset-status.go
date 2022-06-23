@@ -38,7 +38,7 @@ func (n *NodeSetStatus) Repair(cluster *Cluster) {
 	log.Printf("'%s' node set spec has %d replicas\n", target.Name, target.Replicas)
 
 	// Mark for deletion any stuck nodes:
-	n.Find(PhaseUpTo(Joining), LongerThan(10*time.Minute)).SetPhase(Delete)
+	n.Find(PhaseUpTo(Joining), LongerThan(10*time.Minute)).SetPhase(Delete, "stuck")
 
 	// TODO Mark for replacement any nodes with wrong baseImage or kubernetes version
 	// target version is set in cluster status
@@ -73,7 +73,7 @@ func (n *NodeSetStatus) Repair(cluster *Cluster) {
 				Version:      cluster.Status.Versions.NewNodeVersion(target.ApiServer),
 				JoinEndpoint: joinEndpoint,
 			}
-			node.SetPhase(Create)
+			node.SetPhase(Create, "extra server required")
 			n.AddNode(node)
 		}
 	}
@@ -89,6 +89,6 @@ func (n *NodeSetStatus) Repair(cluster *Cluster) {
 	readyNodes := n.Find(InPhase(Active))
 	numberOfUnwantedNodes := len(readyNodes) - target.Replicas
 	if numberOfUnwantedNodes > 0 {
-		readyNodes[:numberOfUnwantedNodes].SetPhase(Delete)
+		readyNodes[:numberOfUnwantedNodes].SetPhase(Delete, "excess server not required")
 	}
 }
