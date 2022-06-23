@@ -21,14 +21,14 @@ type (
 )
 
 func VersionMin(a, b *semver.Version) *semver.Version {
-	if a != nil && a.LessThan(b) {
+	if a != nil && b != nil && a.LessThan(b) {
 		return a
 	}
 	return b
 }
 
 func VersionMax(a, b *semver.Version) *semver.Version {
-	if a != nil && a.GreaterThan(b) {
+	if a != nil && b != nil && a.GreaterThan(b) {
 		return a
 	}
 	return b
