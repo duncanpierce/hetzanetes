@@ -41,7 +41,7 @@ func (p Phase) index() int {
 	case Deleted:
 		return 11
 	default:
-		return 0
+		return 999
 	}
 }
 
