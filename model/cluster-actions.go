@@ -86,17 +86,20 @@ func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion
 	server := hetznerServers.Servers[0]
 	network := server.PrivateNets[0]
 	return &NodeStatus{
-		Name:         name,
-		ServerType:   server.ServerType.Name,
-		Location:     server.Datacenter.Location.Name,
-		Created:      server.Created,
-		CloudId:      strconv.Itoa(server.Id),
-		ClusterIP:    network.IP,
-		BaseImage:    server.Image.Name,
-		ApiServer:    apiServer,
-		Version:      kubernetesVersion,
-		Phase:        Active,
-		PhaseChanged: server.Created,
+		Name:       name,
+		ServerType: server.ServerType.Name,
+		Location:   server.Datacenter.Location.Name,
+		CloudId:    strconv.Itoa(server.Id),
+		ClusterIP:  network.IP,
+		BaseImage:  server.Image.Name,
+		ApiServer:  apiServer,
+		Version:    kubernetesVersion,
+		Phases: PhaseChanges{
+			PhaseChange{
+				Phase: Active,
+				Time:  server.Created,
+			},
+		},
 	}, nil
 }
 

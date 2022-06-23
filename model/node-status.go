@@ -8,14 +8,16 @@ import (
 )
 
 func (n *NodeStatus) SetPhase(phase Phase) {
-	n.Phase = phase
-	n.PhaseChanged = time.Now()
+	n.Phases = append(n.Phases, PhaseChange{
+		Phase: phase,
+		Time:  time.Now(),
+	})
 }
 
 func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 	var err error
 
-	switch n.Phase {
+	switch n.Phases.Current().Phase {
 
 	case Create:
 		var templateToUse string

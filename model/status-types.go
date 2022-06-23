@@ -27,15 +27,18 @@ type (
 		Name         string          `json:"name"`
 		ServerType   string          `json:"serverType"`
 		Location     string          `json:"location"`
-		Created      time.Time       `json:"created"`
 		CloudId      string          `json:"cloudId,omitempty"`
 		ClusterIP    string          `json:"clusterIP,omitempty"`
 		BaseImage    string          `json:"baseImage,omitempty"`
 		ApiServer    bool            `json:"apiServer,omitempty"`
 		Version      *semver.Version `json:"version,omitempty"`
 		JoinEndpoint string          `json:"joinEndpoint,omitempty"`
-		Phase        `json:"phase"`
-		PhaseChanged time.Time `json:"phaseChanged"`
+		Phases       PhaseChanges    `json:"phases,omitempty"`
 	}
-	Phase string
+	Phase        string
+	PhaseChanges []PhaseChange
+	PhaseChange  struct {
+		Phase Phase     `json:"phase"`
+		Time  time.Time `json:"time"`
+	}
 )

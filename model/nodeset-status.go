@@ -68,7 +68,6 @@ func (n *NodeSetStatus) Repair(cluster *Cluster) {
 				Name:         fmt.Sprintf("%s-%s-%d", cluster.Metadata.Name, target.Name, n.Generation),
 				ServerType:   target.ServerType,
 				Location:     target.Locations[rand.Intn(len(target.Locations))],
-				Created:      time.Now(),
 				BaseImage:    cluster.Spec.Versions.GetBaseImage(),
 				ApiServer:    target.ApiServer,
 				Version:      cluster.Status.Versions.NewNodeVersion(target.ApiServer),

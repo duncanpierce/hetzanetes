@@ -31,14 +31,14 @@ func (n *NodeStatuses) Find(filters ...Filter) (nodes NodeStatusRefs) {
 
 func (n NodeStatusRefs) SortByPhase() {
 	sort.SliceStable(n, func(i, j int) bool {
-		return n[i].Phase.Compare(n[j].Phase) < 0
+		return n[i].Phases.Current().Phase.Compare(n[j].Phases.Current().Phase) < 0
 	})
 }
 
 // SortByRecency returns most recent first
 func (n NodeStatusRefs) SortByRecency() {
 	sort.SliceStable(n, func(i, j int) bool {
-		return (n[j].PhaseChanged).Before(n[i].PhaseChanged)
+		return (n[j].Phases.Current().Time).Before(n[i].Phases.Current().Time)
 	})
 }
 
@@ -64,7 +64,7 @@ func (n NodeStatusRefs) GetVersionRange() (v VersionRange) {
 func InPhase(phases ...Phase) Filter {
 	return func(node NodeStatus) bool {
 		for _, phase := range phases {
-			if node.Phase == phase {
+			if node.Phases.Current().Phase == phase {
 				return true
 			}
 		}
@@ -74,13 +74,13 @@ func InPhase(phases ...Phase) Filter {
 
 func PhaseUpTo(phase Phase) Filter {
 	return func(node NodeStatus) bool {
-		return node.Phase.Compare(phase) <= 0
+		return node.Phases.Current().Phase.Compare(phase) <= 0
 	}
 }
 
 func LongerThan(d time.Duration) Filter {
 	return func(node NodeStatus) bool {
-		return node.PhaseChanged.Before(time.Now().Add(-d))
+		return node.Phases.Current().Time.Before(time.Now().Add(-d))
 	}
 }
 

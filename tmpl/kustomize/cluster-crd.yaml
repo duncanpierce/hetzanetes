@@ -135,8 +135,6 @@ spec:
                               type: string
                             location:
                               type: string
-                            created:
-                              type: string
                             cloudId:
                               type: string
                             clusterIP:
@@ -149,9 +147,14 @@ spec:
                               type: string
                             joinEndpoint:
                               type: string
-                            phase:
-                              type: string
-                            phaseChanged:
-                              type: string
+                            phases:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  phase:
+                                    type: string
+                                  time:
+                                    type: string
       subresources:
         status: {}
