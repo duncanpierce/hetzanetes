@@ -42,11 +42,16 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 		cloudInit := tmpl.Cloudinit(config, templateToUse)
 
-		n.CloudId, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, nil, cloudInit)
-		if err == nil {
-			n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
+		sshKeys, err := actions.GetSshKeys()
+		if err != nil {
+			log.Printf("error getting SSH key names: %s\n", err.Error())
 		} else {
-			log.Printf("error creating server '%s': %s", n.Name, err.Error())
+			n.CloudId, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, sshKeys, cloudInit)
+			if err == nil {
+				n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
+			} else {
+				log.Printf("error creating server '%s': %s", n.Name, err.Error())
+			}
 		}
 
 	case Joining:

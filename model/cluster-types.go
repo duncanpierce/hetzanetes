@@ -29,5 +29,6 @@ type (
 		GetKubernetesNode(node NodeStatus) (*NodeResource, error)
 		DeleteNode(node NodeStatus) error
 		SaveStatus(clusterName string, clusterStatus *ClusterStatus) error
+		GetSshKeys() ([]string, error)
 	}
 )

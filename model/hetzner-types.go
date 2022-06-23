@@ -53,4 +53,14 @@ type (
 			Name string `json:"name"`
 		} `json:"server_type"`
 	}
+
+	HetznerSshKeys struct {
+		SshKeys []HetznerSshKey `json:"ssh_keys,omitempty"`
+	}
+
+	HetznerSshKey struct {
+		Id        int    `json:"id"`
+		Name      string `json:"name"`
+		PublicKey string `json:"public_key,omitempty"`
+	}
 )

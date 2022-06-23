@@ -176,3 +176,15 @@ func (c ClusterActions) SaveStatus(clusterName string, status *ClusterStatus) er
 	}
 	return c.kubernetes.Do(http.MethodPatch, "/apis/hetzanetes.duncanpierce.org/v1/clusters/"+clusterName+"/status", headers, patch, nil)
 }
+
+func (c ClusterActions) GetSshKeys() (keyNames []string, err error) {
+	sshKeys := &HetznerSshKeys{}
+	err = c.hetzner.Do(http.MethodGet, "/ssh_keys", nil, nil, sshKeys)
+	if err != nil {
+		return
+	}
+	for _, sshKey := range sshKeys.SshKeys {
+		keyNames = append(keyNames, sshKey.Name)
+	}
+	return
+}
