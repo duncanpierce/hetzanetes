@@ -27,7 +27,7 @@ func (n *NodeSetStatuses) CreateIfNecessary(spec *NodeSetSpec) {
 	}
 }
 
-func (n *NodeSetStatus) Repair(cluster *Cluster, actions Actions) {
+func (n *NodeSetStatus) Repair(cluster *Cluster) {
 	log.Printf("Repairing node set '%s'\n", n.Name)
 	for _, node := range n.NodeStatuses {
 		log.Printf("'%s' status: %#v\n", node.Name, node)

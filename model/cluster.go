@@ -19,7 +19,7 @@ func (c *Cluster) Repair(actions Actions) error {
 	c.Status.UpdateVersionRanges()
 
 	for _, nodeSetStatus := range c.Status.NodeSetStatuses {
-		nodeSetStatus.Repair(c, actions)
+		nodeSetStatus.Repair(c)
 	}
 
 	c.Status.Find().MakeProgress(c, actions)
