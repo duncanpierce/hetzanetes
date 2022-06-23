@@ -1,5 +1,6 @@
 #!/bin/bash
 [[ $# == 1 ]] || { echo "usage: $0 <DOCKER-TAG>"; exit 1; }
 CGO_ENABLED=0 go build -v -o bin/hetzanetes
+[[ $? -eq 0 ]] || { echo "*** build failed ***"; exit 1; }
 sudo docker build -t "duncanpierce/hetzanetes:$1" .
 sudo docker push "duncanpierce/hetzanetes:$1"

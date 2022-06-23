@@ -1,6 +1,9 @@
 package model
 
+import "log"
+
 func (c *ClusterStatus) UpdateVersionRanges() {
+	log.Printf("Updating version ranges\n")
 	api := VersionRange{}
 	worker := VersionRange{}
 
@@ -11,4 +14,5 @@ func (c *ClusterStatus) UpdateVersionRanges() {
 	c.Versions.Api = api
 	c.Versions.Workers = worker
 	c.Versions.Nodes = api.MergeRange(worker)
+	log.Printf("Version ranges to %#v\n", c.Versions)
 }

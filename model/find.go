@@ -16,11 +16,14 @@ func (c *ClusterStatus) Find(filters ...Filter) (nodes NodeStatusRefs) {
 
 func (n *NodeStatuses) Find(filters ...Filter) (nodes NodeStatusRefs) {
 	for _, node := range *n {
+		found := true
 		for _, filter := range filters {
-			if !filter(node) {
-				break
+			if !filter(*node) {
+				found = false
 			}
-			nodes = append(nodes, &node)
+		}
+		if found {
+			nodes = append(nodes, node)
 		}
 	}
 	return

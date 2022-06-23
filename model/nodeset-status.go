@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"log"
 	"time"
 )
 
@@ -17,6 +18,7 @@ func (n NodeSetStatuses) Named(name string) *NodeSetStatus {
 
 func (n *NodeSetStatuses) CreateIfNecessary(spec *NodeSetSpec) {
 	if n.Named(spec.Name) == nil {
+		log.Printf("Creating status for node set '%s'\n", spec.Name)
 		*n = append(*n, &NodeSetStatus{
 			Name:         spec.Name,
 			Generation:   0,
@@ -26,7 +28,14 @@ func (n *NodeSetStatuses) CreateIfNecessary(spec *NodeSetSpec) {
 }
 
 func (n *NodeSetStatus) Repair(cluster *Cluster, actions Actions) {
+	log.Printf("Repairing node set '%s'\n", n.Name)
+	for _, node := range n.NodeStatuses {
+		log.Printf("'%s' status: %#v\n", node.Name, node)
+	}
+
 	target := cluster.Spec.NodeSets.Named(n.Name)
+
+	log.Printf("'%s' node set spec has %d replicas\n", target.Name, target.Replicas)
 
 	// Mark for deletion any stuck nodes:
 	n.Find(PhaseUpTo(Joining), LongerThan(10*time.Minute)).SetPhase(Delete)
@@ -48,22 +57,26 @@ func (n *NodeSetStatus) Repair(cluster *Cluster, actions Actions) {
 
 	apiServers := cluster.Status.Find(InPhase(Active), IsApiServer(true))
 	apiServers.SortByRecency()
-	joinEndpoint := fmt.Sprintf("https://%s:6443", apiServers[0].ClusterIP)
+	log.Printf("Found %d active API nodes of total %d nodes\n", len(apiServers), len(cluster.Status.Find()))
 
-	for i := len(n.Find(PhaseUpTo(Active))); i < target.Replicas; i++ {
-		n.Generation++
-		node := NodeStatus{
-			Name:         fmt.Sprintf("%s-%s-%d", cluster.Metadata.Name, target.Name, n.Generation),
-			ServerType:   target.ServerType,
-			Location:     target.Locations[rand.Intn(len(target.Locations))],
-			Created:      time.Now(),
-			BaseImage:    cluster.Spec.Versions.GetBaseImage(),
-			ApiServer:    target.ApiServer,
-			Version:      cluster.Status.Versions.NewNodeVersion(target.ApiServer),
-			JoinEndpoint: joinEndpoint,
+	if len(apiServers) > 0 {
+		joinEndpoint := fmt.Sprintf("https://%s:6443", apiServers[0].ClusterIP)
+
+		for i := len(n.Find(PhaseUpTo(Active))); i < target.Replicas; i++ {
+			n.Generation++
+			node := &NodeStatus{
+				Name:         fmt.Sprintf("%s-%s-%d", cluster.Metadata.Name, target.Name, n.Generation),
+				ServerType:   target.ServerType,
+				Location:     target.Locations[rand.Intn(len(target.Locations))],
+				Created:      time.Now(),
+				BaseImage:    cluster.Spec.Versions.GetBaseImage(),
+				ApiServer:    target.ApiServer,
+				Version:      cluster.Status.Versions.NewNodeVersion(target.ApiServer),
+				JoinEndpoint: joinEndpoint,
+			}
+			node.SetPhase(Create)
+			n.AddNode(node)
 		}
-		node.SetPhase(Create)
-		n.AddNode(node)
 	}
 
 	// Mark for deletion the oldest ready nodes beyond the number needed for target.Replicas

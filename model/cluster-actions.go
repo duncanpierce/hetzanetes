@@ -3,9 +3,11 @@ package model
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/Masterminds/semver"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/rest"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -74,6 +76,26 @@ func (c ClusterActions) GetReleaseChannels() (r ReleaseChannelStatuses, err erro
 	return
 }
 
+func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion *semver.Version) (*NodeStatus, error) {
+	hetznerServers := &HetznerServersResponse{}
+	c.hetzner.Do(http.MethodGet, "/servers?name="+name, nil, nil, hetznerServers)
+	server := hetznerServers.Servers[0]
+	network := server.PrivateNets[0]
+	return &NodeStatus{
+		Name:         name,
+		ServerType:   server.ServerType.Name,
+		Location:     server.Datacenter.Location.Name,
+		Created:      server.Created,
+		CloudId:      strconv.Itoa(server.Id),
+		ClusterIP:    network.IP,
+		BaseImage:    server.Image.Name,
+		ApiServer:    apiServer,
+		Version:      kubernetesVersion,
+		Phase:        Active,
+		PhaseChanged: server.Created,
+	}, nil
+}
+
 func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error) {
 	privateNetworkNumber, _ := strconv.Atoi(privateNetworkId)
 	firewalls := []HetznerFirewallRef{}
@@ -105,24 +127,27 @@ func (f ClusterActions) DeleteServer(cloudId string) (notFound bool) {
 	return f.hetzner.Do(http.MethodDelete, "/servers"+cloudId, nil, nil, nil) == rest.NotFound
 }
 
-func (f ClusterActions) DrainNode(name string) error {
+func (f ClusterActions) DrainNode(node NodeStatus) error {
+	log.Printf("Draining node %#v\n", node)
 	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
-func (f ClusterActions) CheckNodeReady(name string) bool {
+func (f ClusterActions) CheckNodeReady(node NodeStatus) bool {
+	log.Printf("Checking node %#v ready\n", node)
 	//TODO implement me
-	panic("implement me")
+	return true
 }
 
 func (f ClusterActions) CheckNoNode(name string) bool {
+	log.Printf("Checking no node called %s\n", name)
 	//TODO implement me
-	panic("implement me")
+	return true
 }
 
-func (f ClusterActions) DeleteNode(name string) {
+func (f ClusterActions) DeleteNode(node NodeStatus) {
+	log.Printf("Deleting node %#v\n", node)
 	//TODO implement me
-	panic("implement me")
 }
 
 func (f ClusterActions) GetClusterList() (*ClusterList, error) {

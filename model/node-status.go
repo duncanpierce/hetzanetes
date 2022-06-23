@@ -43,20 +43,20 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Joining:
-		ready := actions.CheckNodeReady(n.Name)
+		ready := actions.CheckNodeReady(*n)
 		if ready {
 			n.SetPhase(Active)
 		}
 
 	case Delete:
-		err = actions.DrainNode(n.Name) // TODO might fail if we go straight from Create/Join to Delete with node ever registering - even if we check whether node has registered and answer is no, we still can't proceed because it's racing us
+		err = actions.DrainNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering - even if we check whether node has registered and answer is no, we still can't proceed because it's racing us
 		if err == nil {
 			n.SetPhase(Draining)
 		}
 
 	case Draining:
 		if LongerThan(5 * time.Minute)(*n) {
-			actions.DeleteNode(n.Name) // TODO might fail if we go straight from Create/Join to Delete with node ever registering
+			actions.DeleteNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering
 			n.SetPhase(Deleting)
 		}
 

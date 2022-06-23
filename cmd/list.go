@@ -29,7 +29,7 @@ func List() *cobra.Command {
 					if verbose {
 						fmt.Printf("  ip-range %s\n", network.IPRange)
 						for _, subnet := range network.Subnets {
-							fmt.Printf("  %s subnet, %s zone, ip-range %v, gateway %v\n", subnet.Type, subnet.NetworkZone, subnet.IPRange, subnet.Gateway)
+							fmt.Printf("  %s subnet, %s zone, ip-range %#v, gateway %v\n", subnet.Type, subnet.NetworkZone, subnet.IPRange, subnet.Gateway)
 						}
 						for _, server := range network.Servers {
 							server, _, err := c.Server.GetByID(c, server.ID)

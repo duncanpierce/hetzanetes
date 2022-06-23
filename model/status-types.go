@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/Masterminds/semver"
-	"github.com/duncanpierce/hetzanetes/label"
 	"time"
 )
 
@@ -22,7 +21,7 @@ type (
 		Generation   int    `json:"generation"`
 		NodeStatuses `json:"nodes,omitempty"`
 	}
-	NodeStatuses   []NodeStatus
+	NodeStatuses   []*NodeStatus
 	NodeStatusRefs []*NodeStatus
 	NodeStatus     struct {
 		Name         string          `json:"name"`
@@ -39,15 +38,4 @@ type (
 		PhaseChanged time.Time `json:"phaseChanged"`
 	}
 	Phase string
-
-	Actions interface {
-		GetReleaseChannels() (ReleaseChannelStatuses, error)
-		CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error)
-		DeleteServer(cloudId string) (notFound bool)
-		DrainNode(name string) error
-		CheckNodeReady(name string) bool
-		CheckNoNode(name string) bool
-		DeleteNode(name string)
-		SaveStatus(clusterName string, clusterStatus *ClusterStatus) error
-	}
 )

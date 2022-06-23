@@ -47,6 +47,7 @@ spec:
       containers:
         - name: repair-cluster
           image: duncanpierce/hetzanetes:{{.HetzanetesTag}}
+          imagePullPolicy: Always
           command: ["/hetzanetes", "internal", "repair"]
           envFrom:
             - secretRef:
