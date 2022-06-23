@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"k8s.io/apimachinery/pkg/util/json"
+	"log"
 	"net/http"
 )
 
@@ -61,7 +62,7 @@ func (k *Client) Do(method string, path string, headers map[string]string, reque
 
 	if request != nil {
 		requestBody, err = json.Marshal(request)
-		//log.Printf("formatted request body as %s\n", string(requestBody))
+		log.Printf("formatted %s to %s as %s\n", method, k.BaseUrl+path, string(requestBody))
 	}
 	if err != nil {
 		return err

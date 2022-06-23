@@ -123,7 +123,7 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 		SshKeys:    sshKeys,
 		CloudInit:  cloudInit,
 	}
-	serverResult := CreateHetznerServerResult{}
+	serverResult := &CreateHetznerServerResult{}
 	err = c.hetzner.Do(http.MethodPost, "/servers", rest.JSON(), serverRequest, serverResult)
 	if err != nil {
 		return

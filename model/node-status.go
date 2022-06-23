@@ -4,6 +4,7 @@ import (
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/tmpl"
+	"log"
 	"time"
 )
 
@@ -43,6 +44,8 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		n.CloudId, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, nil, cloudInit)
 		if err == nil {
 			n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
+		} else {
+			log.Printf("error creating server '%s': %s", n.Name, err.Error())
 		}
 
 	case Joining:
@@ -55,6 +58,8 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		err = actions.DrainNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering - even if we check whether node has registered and answer is no, we still can't proceed because it's racing us
 		if err == nil {
 			n.SetPhase(Draining, "")
+		} else {
+			log.Printf("error draining node '%s': %s", n.Name, err.Error())
 		}
 
 	case Draining:

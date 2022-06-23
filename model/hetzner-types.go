@@ -7,12 +7,12 @@ type (
 		Name       string               `json:"name"`
 		ServerType string               `json:"server_type"`
 		Image      string               `json:"image"`
-		Location   string               `json:"location"`
-		Networks   []int                `json:"networks"`
-		Firewalls  []HetznerFirewallRef `json:"firewalls"`
-		Labels     map[string]string    `json:"labels"`
-		SshKeys    []string             `json:"ssh_keys"`
-		CloudInit  string               `json:"user_data"`
+		Location   string               `json:"location,omitempty"`
+		Networks   []int                `json:"networks,omitempty"`
+		Firewalls  []HetznerFirewallRef `json:"firewalls,omitempty"`
+		Labels     map[string]string    `json:"labels,omitempty"`
+		SshKeys    []string             `json:"ssh_keys,omitempty"`
+		CloudInit  string               `json:"user_data,omitempty"`
 	}
 
 	HetznerFirewallRef struct {
