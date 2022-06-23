@@ -46,7 +46,7 @@ func (p Phase) index() int {
 }
 
 func (p Phase) Compare(other Phase) int {
-	return other.index() - p.index()
+	return p.index() - other.index()
 }
 
 func (p PhaseChanges) Current() PhaseChange {
