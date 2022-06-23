@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
+	"github.com/duncanpierce/hetzanetes/rest"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"log"
 	"time"
@@ -49,8 +50,12 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Joining:
-		ready := actions.CheckNodeReady(*n)
-		if ready {
+		nodeResource, err := actions.GetKubernetesNode(*n)
+		if err != nil {
+			log.Printf("got error from kubernetes api getting node '%s': %s\n", n.Name, err.Error())
+			break
+		}
+		if nodeResource.IsReady() {
 			n.SetPhase(Active, "node has joined")
 		}
 
@@ -73,8 +78,9 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Deleting:
-		if actions.CheckNoNode(n.Name) {
-			notFound := actions.DeleteServer(n.CloudId)
+		_, err = actions.GetKubernetesNode(*n)
+		if err == rest.NotFound {
+			notFound := actions.DeleteServer(*n)
 			if notFound {
 				n.SetPhase(Deleted, "")
 			}

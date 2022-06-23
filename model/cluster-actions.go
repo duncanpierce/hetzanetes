@@ -131,8 +131,13 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 	return strconv.Itoa(serverResult.Server.Id), nil
 }
 
-func (f ClusterActions) DeleteServer(cloudId string) (notFound bool) {
-	return f.hetzner.Do(http.MethodDelete, "/servers"+cloudId, nil, nil, nil) == rest.NotFound
+func (f ClusterActions) DeleteServer(node NodeStatus) (notFound bool) {
+	if node.CloudId == "" {
+		log.Printf("Error: deleting server with no cloudId")
+		return false
+	} else {
+		return f.hetzner.Do(http.MethodDelete, "/servers"+node.CloudId, nil, nil, nil) == rest.NotFound
+	}
 }
 
 func (f ClusterActions) DrainNode(node NodeStatus) error {
@@ -141,20 +146,18 @@ func (f ClusterActions) DrainNode(node NodeStatus) error {
 	return nil
 }
 
-func (f ClusterActions) CheckNodeReady(node NodeStatus) bool {
+func (f ClusterActions) GetKubernetesNode(node NodeStatus) (*NodeResource, error) {
 	log.Printf("Checking node %#v ready\n", node)
-	//TODO implement me
-	return true
-}
-
-func (f ClusterActions) CheckNoNode(name string) bool {
-	log.Printf("Checking no node called %s\n", name)
-	//TODO implement me
-	return true
+	response := &NodeResource{}
+	err := f.kubernetes.Do(http.MethodGet, "/api/v1/nodes/"+node.Name, nil, nil, response)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 func (f ClusterActions) DeleteNode(node NodeStatus) error {
-	log.Printf("Deleting node %#v\n", node)
+	log.Printf("Deleting node %#v with id %s\n", node, node.CloudId)
 	return f.hetzner.Do(http.MethodDelete, "/servers/"+node.CloudId, nil, nil, nil)
 }
 

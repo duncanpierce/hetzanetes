@@ -86,6 +86,8 @@ func (n *NodeSetStatus) Repair(cluster *Cluster) {
 	// TODO don't delete an API node which has been assigned as the join endpoint for a not-yet-ready node
 	// TODO don't delete the last API server
 
+	// TODO it might be better to delete servers that haven't finished joining yet, rather than wait for them to join then delete earlier servers
+
 	readyNodes := n.Find(InPhase(Active))
 	numberOfUnwantedNodes := len(readyNodes) - target.Replicas
 	if numberOfUnwantedNodes > 0 {
