@@ -71,9 +71,13 @@ func NewK3s() *rest.Client {
 	}
 }
 
-func (c ClusterActions) GetReleaseChannels() (r ReleaseChannelStatuses, err error) {
-	err = c.k3s.Do(http.MethodGet, "/channels", nil, nil, &r)
-	return
+func (c ClusterActions) GetReleaseChannels() (ReleaseChannelStatuses, error) {
+	response := &K3sReleaseChannelsResponse{}
+	err := c.k3s.Do(http.MethodGet, "/channels", nil, nil, response)
+	if err != nil {
+		return nil, err
+	}
+	return response.Data, nil
 }
 
 func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion *semver.Version) (*NodeStatus, error) {

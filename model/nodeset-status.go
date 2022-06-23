@@ -85,6 +85,7 @@ func (n *NodeSetStatus) Repair(cluster *Cluster, actions Actions) {
 	// NB there is a race for Joining nodes but not others, provided the phase change isn't happening in a separate controller
 
 	// TODO don't delete an API node which has been assigned as the join endpoint for a not-yet-ready node
+	// TODO don't delete the last API server
 
 	readyNodes := n.Find(InPhase(Active))
 	numberOfUnwantedNodes := len(readyNodes) - target.Replicas

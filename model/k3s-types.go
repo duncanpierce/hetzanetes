@@ -3,6 +3,10 @@ package model
 import "github.com/Masterminds/semver"
 
 type (
+	K3sReleaseChannelsResponse struct {
+		Data ReleaseChannelStatuses `json:"data"`
+	}
+
 	ReleaseChannelStatuses []*ReleaseChannelStatus
 
 	ReleaseChannelStatus struct {

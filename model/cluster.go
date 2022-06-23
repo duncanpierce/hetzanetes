@@ -9,7 +9,10 @@ import (
 func (c *Cluster) Repair(actions Actions) error {
 	if c.Status == nil {
 		log.Printf("No status found - bootstrapping\n")
-		c.Bootstrap(actions)
+		err := c.Bootstrap(actions)
+		if err != nil {
+			return err
+		}
 	}
 
 	c.CreateNodeSetStatusesIfNecessary()
@@ -19,8 +22,7 @@ func (c *Cluster) Repair(actions Actions) error {
 		nodeSetStatus.Repair(c, actions)
 	}
 
-	// Action phase change for all nodes
-	c.Status.Find(MatchAll()).MakeProgress(c, actions)
+	c.Status.Find().MakeProgress(c, actions)
 
 	c.Status.UpdateVersionRanges()
 	return actions.SaveStatus(c.Metadata.Name, c.Status)
@@ -43,6 +45,11 @@ func (c *Cluster) Bootstrap(actions Actions) error {
 		NodeSetStatuses: NodeSetStatuses{},
 	}
 
+	log.Printf("Downloading release channels and setting target Kubernetes version for cluster\n")
+	if err := c.Status.Versions.UpdateReleaseChannels(c.Spec.Versions.GetKubernetes(), actions); err != nil {
+		return err
+	}
+
 	log.Printf("Creating nodeSet statuses\n")
 	c.CreateNodeSetStatusesIfNecessary()
 
@@ -60,11 +67,6 @@ func (c *Cluster) Bootstrap(actions Actions) error {
 
 	log.Printf("Adding bootstrap node %#v to node status\n", nodeStatus)
 	nodeSetStatus.NodeStatuses = append(nodeSetStatus.NodeStatuses, nodeStatus)
-
-	log.Printf("Downloading release channels and setting target Kubernetes version for cluster\n")
-	if err := c.Status.Versions.UpdateReleaseChannels(c.Spec.Versions.GetKubernetes(), actions); err != nil {
-		return err
-	}
 
 	return nil
 }

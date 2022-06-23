@@ -61,12 +61,6 @@ func (n NodeStatusRefs) GetVersionRange() (v VersionRange) {
 	return
 }
 
-func MatchAll() Filter {
-	return func(node NodeStatus) bool {
-		return true
-	}
-}
-
 func InPhase(phases ...Phase) Filter {
 	return func(node NodeStatus) bool {
 		for _, phase := range phases {
