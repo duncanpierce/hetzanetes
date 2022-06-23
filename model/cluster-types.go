@@ -28,7 +28,7 @@ type (
 		DrainNode(node NodeStatus) error
 		CheckNodeReady(node NodeStatus) bool
 		CheckNoNode(name string) bool
-		DeleteNode(node NodeStatus)
+		DeleteNode(node NodeStatus) error
 		SaveStatus(clusterName string, clusterStatus *ClusterStatus) error
 	}
 )

@@ -63,9 +63,13 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Draining:
-		if LongerThan(5 * time.Minute)(*n) {
-			actions.DeleteNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering
-			n.SetPhase(Deleting, "")
+		if LongerThan(3 * time.Minute)(*n) {
+			err := actions.DeleteNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering
+			if err == nil {
+				n.SetPhase(Deleting, "")
+			} else {
+				log.Printf("error deleting node %s\n", n.Name)
+			}
 		}
 
 	case Deleting:

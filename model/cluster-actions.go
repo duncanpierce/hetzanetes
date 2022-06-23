@@ -153,9 +153,9 @@ func (f ClusterActions) CheckNoNode(name string) bool {
 	return true
 }
 
-func (f ClusterActions) DeleteNode(node NodeStatus) {
+func (f ClusterActions) DeleteNode(node NodeStatus) error {
 	log.Printf("Deleting node %#v\n", node)
-	//TODO implement me
+	return f.hetzner.Do(http.MethodDelete, "/servers/"+node.CloudId, nil, nil, nil)
 }
 
 func (f ClusterActions) GetClusterList() (*ClusterList, error) {
