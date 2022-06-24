@@ -57,3 +57,5 @@ spec:
                 name: k3s
             - secretRef:
                 name: hcloud
+            - secretRef:
+                name: ssh

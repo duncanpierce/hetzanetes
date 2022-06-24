@@ -18,6 +18,7 @@ func Internal() *cobra.Command {
 		Spike(),
 		Repair(),
 		Net(),
+		Ssh(),
 	)
 	return cmd
 }

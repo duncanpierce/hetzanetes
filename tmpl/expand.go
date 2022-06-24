@@ -32,6 +32,8 @@ type ClusterConfig struct {
 	KubernetesVersion string
 	HetzanetesTag     string
 	ClusterYaml       string
+	SshPublicKey      string
+	SshPrivateKey     string
 	// TODO add Version map[string]string and emit versions in files unless the key is missing
 }
 

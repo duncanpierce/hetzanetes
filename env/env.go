@@ -36,3 +36,11 @@ func K3sToken() string {
 func K3sEndpoint() string {
 	return Get("K3S_URL", "a K3s API server endpoint")
 }
+
+func SshPrivateKey() string {
+	return Get("SSH_PRIVATE_KEY", "the SSH private key for the cluster")
+}
+
+func SshPublicKey() string {
+	return Get("SSH_PUBLIC_KEY", "the SSH public key for the cluster")
+}

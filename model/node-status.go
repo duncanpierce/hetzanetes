@@ -39,6 +39,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 			ApiEndpoint:       n.JoinEndpoint,
 			JoinToken:         env.K3sToken(), // TODO this should come from a named Secret
 			PrivateIpRange:    cluster.Status.ClusterNetwork.IpRange,
+			SshPublicKey:      env.SshPublicKey(), // TODO this should come from a named Secret
 		}
 		cloudInit := tmpl.Cloudinit(config, templateToUse)
 

@@ -6,6 +6,7 @@ import (
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/duncanpierce/hetzanetes/label"
+	"github.com/duncanpierce/hetzanetes/login"
 	"github.com/duncanpierce/hetzanetes/model"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -93,6 +94,12 @@ func Create() *cobra.Command {
 			}
 			fmt.Printf("Created network %d %s (%s)\n", network.ID, network.Name, network.IPRange.String())
 
+			publicKey, privateKey, err := login.NewSshKey()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Public key:\n%s\n\nPrivate key:\n%s\n\n", publicKey, privateKey)
+
 			serverConfig := tmpl.ClusterConfig{
 				HetznerApiToken:   apiToken,
 				ClusterName:       cluster.Metadata.Name,
@@ -104,6 +111,8 @@ func Create() *cobra.Command {
 				K3sReleaseChannel: cluster.Spec.Versions.GetKubernetes(),
 				HetzanetesTag:     cluster.Spec.Versions.GetHetzanetes(),
 				ClusterYaml:       string(clusterYaml),
+				SshPublicKey:      publicKey,
+				SshPrivateKey:     privateKey,
 			}
 			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
 
