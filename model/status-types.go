@@ -7,7 +7,7 @@ import (
 
 type (
 	ClusterStatus struct {
-		Versions        VersionStatus        `json:"versions"`
+		Versions        *VersionStatus       `json:"versions"`
 		ClusterNetwork  ClusterNetworkStatus `json:"clusterNetwork"`
 		NodeSetStatuses `json:"nodeSets,omitempty"`
 	}

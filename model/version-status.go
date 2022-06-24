@@ -35,7 +35,13 @@ func VersionMax(a, b *semver.Version) *semver.Version {
 }
 
 func (v VersionRange) Same() bool {
-	return v.Max.Equal(v.Min)
+	if v.Max == nil {
+		return v.Min == nil
+	} else if v.Min == nil {
+		return false
+	} else {
+		return v.Max.Equal(v.Min)
+	}
 }
 
 func (v VersionRange) MergeRange(other VersionRange) VersionRange {
@@ -57,16 +63,17 @@ func (v VersionStatus) NewNodeVersion(apiServer bool) *semver.Version {
 }
 
 func (v VersionStatus) NewWorkerNodeVersion() *semver.Version {
+	// Worker node can never have a higher version than any API node
 	return v.Api.Min
 }
 
 func (v VersionStatus) NewApiNodeVersion() *semver.Version {
-	// If there are a mix of different versions, drive new API servers towards the same version
+	// If there is a mix of different versions, drive new API servers towards the same version
 	if !v.Api.Same() {
 		return v.Api.Max
 	}
 
-	// Target version can't be a downgrade for any node in the cluster
+	// Target major.minor version can't be a downgrade for any node in the cluster (but patch level can be downgraded)
 	if v.Target.Major() < v.Nodes.Max.Major() || v.Target.Minor() <= v.Nodes.Max.Minor() {
 		return v.Nodes.Max
 	}
@@ -79,7 +86,7 @@ func (v VersionStatus) NewApiNodeVersion() *semver.Version {
 		return v.Target
 	}
 
-	// Otherwise, we can't directly upgrade because there is too much version skew, so look for the current release in the channel of the max allowed version
+	// Otherwise, we can't directly upgrade because there is too much version skew, so look for the current release in the channel of the max version that is allowed
 	channel := v.Channels.Named(fmt.Sprintf("v%d.%d", maxAllowable.Major(), maxAllowable.Minor()))
 	if channel != nil {
 		return channel.Latest

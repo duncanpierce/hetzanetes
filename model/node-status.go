@@ -34,8 +34,10 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 			templateToUse = "add-worker.yaml"
 			labels.Mark(label.WorkerLabel)
 		}
+		kubernetesVersion := cluster.Status.Versions.NewNodeVersion(n.ApiServer).String()
+		log.Printf("Version %s chosen for node %s\n", kubernetesVersion, n.Name)
 		config := tmpl.ClusterConfig{
-			KubernetesVersion: cluster.Status.Versions.Target.String(),
+			KubernetesVersion: kubernetesVersion,
 			ApiEndpoint:       n.JoinEndpoint,
 			JoinToken:         env.K3sToken(), // TODO this should come from a named Secret
 			PrivateIpRange:    cluster.Status.ClusterNetwork.IpRange,

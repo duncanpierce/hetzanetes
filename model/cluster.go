@@ -37,7 +37,7 @@ func (c *Cluster) CreateNodeSetStatusesIfNecessary() {
 func (c *Cluster) Bootstrap(actions Actions) error {
 	log.Printf("Initializing status field\n")
 	c.Status = &ClusterStatus{
-		Versions: VersionStatus{},
+		Versions: &VersionStatus{},
 		ClusterNetwork: ClusterNetworkStatus{
 			CloudId: env.HCloudNetworkId(),
 			IpRange: env.HCloudNetworkIpRange(),
