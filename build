@@ -1,0 +1,4 @@
+#!/bin/bash
+
+CGO_ENABLED=0 go build -v -o bin/hetzanetes
+[[ $? -eq 0 ]] || { echo "*** build failed ***"; exit 1; }
