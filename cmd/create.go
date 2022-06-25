@@ -98,7 +98,6 @@ func Create() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Public key:\n%s\n\nPrivate key:\n%s\n\n", publicKey, privateKey)
 
 			serverConfig := tmpl.ClusterConfig{
 				HetznerApiToken:   apiToken,
