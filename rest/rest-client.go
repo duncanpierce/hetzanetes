@@ -12,9 +12,11 @@ import (
 
 type (
 	Client struct {
-		Http    http.Client
-		BaseUrl string
-		Token   string
+		Http        http.Client
+		BaseUrl     string
+		Token       string
+		LogRequest  bool
+		LogResponse bool
 	}
 )
 
@@ -68,7 +70,9 @@ func (k *Client) Do(method string, path string, headers map[string]string, reque
 
 	if request != nil {
 		requestBody, err = json.Marshal(request)
-		log.Printf("formatted %s to %s as %s\n", method, k.BaseUrl+path, string(requestBody))
+		if k.LogRequest {
+			log.Printf("formatted %s request to %s as %s\n", method, k.BaseUrl+path, string(requestBody))
+		}
 	}
 	if err != nil {
 		return err
@@ -78,6 +82,9 @@ func (k *Client) Do(method string, path string, headers map[string]string, reque
 		return err
 	}
 	if result != nil {
+		if k.LogResponse {
+			log.Printf("received response from %s: %s\n", k.BaseUrl+path, string(data))
+		}
 		return json.Unmarshal(data, result)
 	}
 	return nil

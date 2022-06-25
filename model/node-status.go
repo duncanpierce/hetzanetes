@@ -52,8 +52,18 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 			log.Printf("error getting SSH key names: %s\n", err.Error())
 		} else {
 			n.CloudId, n.ClusterIP, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, sshKeys, cloudInit)
-			if err == nil || err == rest.Conflict {
+			if err == nil {
 				n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
+			} else if err == rest.Conflict {
+				log.Printf("Conflict: node %s has already been created\n", n.Name)
+				existingServer, err := actions.GetServer(n.Name, n.ApiServer, n.Version)
+				if err != nil {
+					log.Printf("Unable to get existing server '%s' details from Hetzner: %s\n", n.Name, err.Error())
+				} else {
+					n.CloudId = existingServer.CloudId
+					n.ClusterIP = existingServer.ClusterIP
+					n.SetPhase(Joining, "waiting for previously-created node to join")
+				}
 			} else {
 				log.Printf("error creating server '%s': %s", n.Name, err.Error())
 			}

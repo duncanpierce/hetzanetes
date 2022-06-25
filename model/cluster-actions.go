@@ -59,9 +59,10 @@ func NewKubernetes() *rest.Client {
 
 func NewHetzner(token string) *rest.Client {
 	return &rest.Client{
-		BaseUrl: "https://api.hetzner.cloud/v1",
-		Http:    http.Client{},
-		Token:   token,
+		BaseUrl:     "https://api.hetzner.cloud/v1",
+		Http:        http.Client{},
+		Token:       token,
+		LogResponse: true,
 	}
 }
 func NewK3s() *rest.Client {
@@ -129,6 +130,7 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 		return
 	}
 
+	// TODO this panics:
 	return strconv.Itoa(serverResult.Server.Id), serverResult.Server.PrivateNet[0].IP, nil
 }
 
