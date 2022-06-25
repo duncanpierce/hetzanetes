@@ -19,6 +19,7 @@ type (
 )
 
 var NotFound = errors.New("resource not found")
+var Conflict = errors.New("resource conflict")
 
 func JSON() map[string]string {
 	return map[string]string{"Content-Type": "application/json"}
@@ -46,13 +47,18 @@ func (k *Client) DoRaw(method string, path string, headers map[string]string, re
 	}
 	defer response.Body.Close()
 	responseBody, err := io.ReadAll(response.Body)
-	if response.StatusCode == 404 {
+
+	switch response.StatusCode {
+	case 404:
 		return responseBody, NotFound
+	case 409:
+		return responseBody, Conflict
+	default:
+		if response.StatusCode >= 400 {
+			return responseBody, fmt.Errorf("got status code %d from Kubernetes API", response.StatusCode)
+		}
+		return responseBody, err
 	}
-	if response.StatusCode >= 400 {
-		return responseBody, fmt.Errorf("got status code %d from Kubernetes API", response.StatusCode)
-	}
-	return responseBody, err
 }
 
 func (k *Client) Do(method string, path string, headers map[string]string, request interface{}, result interface{}) error {

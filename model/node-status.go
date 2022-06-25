@@ -52,7 +52,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 			log.Printf("error getting SSH key names: %s\n", err.Error())
 		} else {
 			n.CloudId, n.ClusterIP, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, sshKeys, cloudInit)
-			if err == nil {
+			if err == nil || err == rest.Conflict {
 				n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
 			} else {
 				log.Printf("error creating server '%s': %s", n.Name, err.Error())
