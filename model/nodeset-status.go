@@ -87,6 +87,7 @@ func (n *NodeSetStatus) Repair(cluster *Cluster) {
 	// TODO don't delete the last API server
 
 	// TODO it might be better to delete servers that haven't finished joining yet, rather than wait for them to join then delete earlier servers
+	// TODO scale down 1 node at a time
 
 	readyNodes := n.Find(InPhase(Active))
 	numberOfUnwantedNodes := len(readyNodes) - target.Replicas

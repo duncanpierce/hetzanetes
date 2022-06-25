@@ -104,7 +104,7 @@ func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion
 	}, nil
 }
 
-func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeyIds []int, cloudInit string) (cloudId string, err error) {
+func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeyIds []int, cloudInit string) (cloudId string, clusterIP string, err error) {
 	privateNetworkNumber, _ := strconv.Atoi(privateNetworkId)
 	firewalls := []HetznerFirewallRef{}
 	for _, firewallId := range firewallIds {
@@ -128,7 +128,8 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 	if err != nil {
 		return
 	}
-	return strconv.Itoa(serverResult.Server.Id), nil
+
+	return strconv.Itoa(serverResult.Server.Id), serverResult.Server.PrivateNet[0].IP, nil
 }
 
 func (f ClusterActions) DeleteServer(node NodeStatus) (notFound bool) {

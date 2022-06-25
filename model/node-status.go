@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/rest"
@@ -34,7 +35,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 			templateToUse = "add-worker.yaml"
 			labels.Mark(label.WorkerLabel)
 		}
-		kubernetesVersion := cluster.Status.Versions.NewNodeVersion(n.ApiServer).String()
+		kubernetesVersion := fmt.Sprintf("v%s", cluster.Status.Versions.NewNodeVersion(n.ApiServer).String())
 		log.Printf("Version %s chosen for node %s\n", kubernetesVersion, n.Name)
 		config := tmpl.ClusterConfig{
 			KubernetesVersion: kubernetesVersion,
@@ -44,12 +45,13 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 			SshPublicKey:      env.SshPublicKey(), // TODO this should come from a named Secret
 		}
 		cloudInit := tmpl.Cloudinit(config, templateToUse)
+		log.Printf("Cloudinit for new node %s:\n%s\n\n", n.Name, cloudInit)
 
 		sshKeys, err := actions.GetSshKeyIds()
 		if err != nil {
 			log.Printf("error getting SSH key names: %s\n", err.Error())
 		} else {
-			n.CloudId, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, sshKeys, cloudInit)
+			n.CloudId, n.ClusterIP, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, sshKeys, cloudInit)
 			if err == nil {
 				n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
 			} else {
