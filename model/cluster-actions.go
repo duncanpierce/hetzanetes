@@ -104,7 +104,7 @@ func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion
 	}, nil
 }
 
-func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeys []string, cloudInit string) (cloudId string, err error) {
+func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeyIds []int, cloudInit string) (cloudId string, err error) {
 	privateNetworkNumber, _ := strconv.Atoi(privateNetworkId)
 	firewalls := []HetznerFirewallRef{}
 	for _, firewallId := range firewallIds {
@@ -120,7 +120,7 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 		Networks:   []int{privateNetworkNumber},
 		Firewalls:  firewalls,
 		Labels:     labels,
-		SshKeys:    sshKeys,
+		SshKeys:    sshKeyIds,
 		CloudInit:  cloudInit,
 	}
 	serverResult := &CreateHetznerServerResult{}
@@ -177,14 +177,14 @@ func (c ClusterActions) SaveStatus(clusterName string, status *ClusterStatus) er
 	return c.kubernetes.Do(http.MethodPatch, "/apis/hetzanetes.duncanpierce.org/v1/clusters/"+clusterName+"/status", headers, patch, nil)
 }
 
-func (c ClusterActions) GetSshKeys() (keyNames []string, err error) {
+func (c ClusterActions) GetSshKeyIds() (keyIds []int, err error) {
 	sshKeys := &HetznerSshKeys{}
 	err = c.hetzner.Do(http.MethodGet, "/ssh_keys", nil, nil, sshKeys)
 	if err != nil {
 		return
 	}
 	for _, sshKey := range sshKeys.SshKeys {
-		keyNames = append(keyNames, sshKey.Name)
+		keyIds = append(keyIds, sshKey.Id)
 	}
 	return
 }

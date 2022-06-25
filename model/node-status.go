@@ -45,7 +45,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 		cloudInit := tmpl.Cloudinit(config, templateToUse)
 
-		sshKeys, err := actions.GetSshKeys()
+		sshKeys, err := actions.GetSshKeyIds()
 		if err != nil {
 			log.Printf("error getting SSH key names: %s\n", err.Error())
 		} else {

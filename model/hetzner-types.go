@@ -11,7 +11,7 @@ type (
 		Networks   []int                `json:"networks,omitempty"`
 		Firewalls  []HetznerFirewallRef `json:"firewalls,omitempty"`
 		Labels     map[string]string    `json:"labels,omitempty"`
-		SshKeys    []string             `json:"ssh_keys,omitempty"`
+		SshKeys    []int                `json:"ssh_keys,omitempty"`
 		CloudInit  string               `json:"user_data,omitempty"`
 	}
 
