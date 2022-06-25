@@ -11,7 +11,7 @@ type (
 		Nodes    VersionRange           `json:"nodes"`
 		Api      VersionRange           `json:"api"`
 		Workers  VersionRange           `json:"workers"`
-		Channels ReleaseChannelStatuses `json:"channels,omitempty"` // gathered from https://update.k3s.io/v1-release/channels
+		Channels ReleaseChannelStatuses `json:"channels,omitempty"`
 	}
 
 	VersionRange struct {
@@ -21,14 +21,26 @@ type (
 )
 
 func VersionMin(a, b *semver.Version) *semver.Version {
-	if a != nil && b != nil && a.LessThan(b) {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+	if a.LessThan(b) {
 		return a
 	}
 	return b
 }
 
 func VersionMax(a, b *semver.Version) *semver.Version {
-	if a != nil && b != nil && a.GreaterThan(b) {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+	if a.GreaterThan(b) {
 		return a
 	}
 	return b
@@ -78,15 +90,15 @@ func (v VersionStatus) NewApiNodeVersion() *semver.Version {
 		return v.Nodes.Max
 	}
 
-	// Treat the max allowable version as a minor increment above the lowest version of any node in the cluster
-	maxAllowable := VersionMin(v.Api.Min, v.Workers.Min).IncMinor()
+	// The max allowable version is a minor increment above the lowest version of any node in the cluster
+	maxAllowable := v.Nodes.Min.IncMinor()
 
 	// If target version satisfies the max allowed, use that
 	if v.Target.Major() == maxAllowable.Major() && v.Target.Minor() <= maxAllowable.Minor() {
 		return v.Target
 	}
 
-	// Otherwise, we can't directly upgrade because there is too much version skew, so look for the current release in the channel of the max version that is allowed
+	// Otherwise, we can't directly upgrade to target version because there is too much version skew, so look for the current release in the channel of the max version that is allowed
 	channel := v.Channels.Named(fmt.Sprintf("v%d.%d", maxAllowable.Major(), maxAllowable.Minor()))
 	if channel != nil {
 		return channel.Latest
