@@ -56,7 +56,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 				n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
 			} else if err == rest.Conflict {
 				log.Printf("Conflict: node %s has already been created\n", n.Name)
-				existingServer, err := actions.GetServer(n.Name, n.ApiServer, n.Version)
+				existingServer, err := actions.GetBootstrapServer(n.Name, n.ApiServer, n.Version)
 				if err != nil {
 					log.Printf("Unable to get existing server '%s' details from Hetzner: %s\n", n.Name, err.Error())
 				} else {

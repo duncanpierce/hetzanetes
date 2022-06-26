@@ -3,6 +3,7 @@ package model
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 type (
@@ -81,7 +83,7 @@ func (c ClusterActions) GetReleaseChannels() (ReleaseChannelStatuses, error) {
 	return response.Data, nil
 }
 
-func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion *semver.Version) (*NodeStatus, error) {
+func (c ClusterActions) GetBootstrapServer(name string, apiServer bool, kubernetesVersion *semver.Version) (*NodeStatus, error) {
 	hetznerServers := &HetznerServersResponse{}
 	c.hetzner.Do(http.MethodGet, "/servers?name="+name, nil, nil, hetznerServers)
 	server := hetznerServers.Servers[0]
@@ -98,7 +100,7 @@ func (c ClusterActions) GetServer(name string, apiServer bool, kubernetesVersion
 		Phases: PhaseChanges{
 			PhaseChange{
 				Phase:  Active,
-				Reason: "bootstrapped",
+				Reason: "bootstrap api server",
 				Time:   server.Created,
 			},
 		},
@@ -124,49 +126,87 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 		SshKeys:    sshKeyIds,
 		CloudInit:  cloudInit,
 	}
-	serverResult := &CreateHetznerServerResult{}
+	serverResult := &HetznerServerResult{}
 	err = c.hetzner.Do(http.MethodPost, "/servers", rest.JSON(), serverRequest, serverResult)
 	if err != nil {
 		return
 	}
+	cloudIdNum := serverResult.Server.Id
+	log.Printf("New server %s cloud id=%d\n", name, cloudIdNum)
 
-	// TODO this panics:
-	return strconv.Itoa(serverResult.Server.Id), serverResult.Server.PrivateNet[0].IP, nil
+	// Wait for private network to be attached (among other things)
+	err = c.Await("servers", cloudIdNum)
+	if err != nil {
+		return
+	}
+
+	serverResult = &HetznerServerResult{}
+	err = c.hetzner.Do(http.MethodGet, fmt.Sprintf("/servers/%d", cloudIdNum), nil, nil, serverResult)
+	if err != nil {
+		return
+	}
+
+	return strconv.Itoa(cloudIdNum), serverResult.Server.PrivateNet[0].IP, nil
 }
 
-func (f ClusterActions) DeleteServer(node NodeStatus) (notFound bool) {
+func (c ClusterActions) Await(resourceType string, resourceId int) error {
+	for {
+		time.Sleep(1 * time.Second)
+		result := &HetznerActionsResponse{}
+		err := c.hetzner.Do(http.MethodGet, fmt.Sprintf("/%s/%d/actions", resourceType, resourceId), nil, nil, result)
+		if err != nil {
+			log.Printf("error awaiting %s %d: API returned error %s\n", resourceType, resourceId, err.Error())
+			return err
+		}
+
+		stillRunning := false
+		for _, action := range result.Actions {
+			if action.Status == "error" {
+				return fmt.Errorf("error awaiting %s %d: %s", resourceType, resourceId, action.Error.Message)
+			} else if action.Status == "running" {
+				stillRunning = true
+				break
+			}
+		}
+		if !stillRunning {
+			return nil
+		}
+	}
+}
+
+func (c ClusterActions) DeleteServer(node NodeStatus) (notFound bool) {
 	if node.CloudId == "" {
 		log.Printf("Error: deleting server with no cloudId")
 		return false
 	} else {
-		return f.hetzner.Do(http.MethodDelete, "/servers"+node.CloudId, nil, nil, nil) == rest.NotFound
+		return c.hetzner.Do(http.MethodDelete, "/servers"+node.CloudId, nil, nil, nil) == rest.NotFound
 	}
 }
 
-func (f ClusterActions) DrainNode(node NodeStatus) error {
+func (c ClusterActions) DrainNode(node NodeStatus) error {
 	log.Printf("Draining node %#v\n", node)
 	//TODO implement me
 	return nil
 }
 
-func (f ClusterActions) GetKubernetesNode(node NodeStatus) (*NodeResource, error) {
+func (c ClusterActions) GetKubernetesNode(node NodeStatus) (*NodeResource, error) {
 	log.Printf("Checking node %#v ready\n", node)
 	response := &NodeResource{}
-	err := f.kubernetes.Do(http.MethodGet, "/api/v1/nodes/"+node.Name, nil, nil, response)
+	err := c.kubernetes.Do(http.MethodGet, "/api/v1/nodes/"+node.Name, nil, nil, response)
 	if err != nil {
 		return nil, err
 	}
 	return response, nil
 }
 
-func (f ClusterActions) DeleteNode(node NodeStatus) error {
+func (c ClusterActions) DeleteNode(node NodeStatus) error {
 	log.Printf("Deleting node %#v with id %s\n", node, node.CloudId)
-	return f.hetzner.Do(http.MethodDelete, "/servers/"+node.CloudId, nil, nil, nil)
+	return c.hetzner.Do(http.MethodDelete, "/servers/"+node.CloudId, nil, nil, nil)
 }
 
-func (f ClusterActions) GetClusterList() (*ClusterList, error) {
+func (c ClusterActions) GetClusterList() (*ClusterList, error) {
 	var clusterList ClusterList
-	err := f.kubernetes.Do(http.MethodGet, "/apis/hetzanetes.duncanpierce.org/v1/clusters", map[string]string{}, nil, &clusterList)
+	err := c.kubernetes.Do(http.MethodGet, "/apis/hetzanetes.duncanpierce.org/v1/clusters", map[string]string{}, nil, &clusterList)
 	return &clusterList, err
 }
 

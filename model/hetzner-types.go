@@ -19,7 +19,7 @@ type (
 		Firewall int `json:"firewall"`
 	}
 
-	CreateHetznerServerResult struct {
+	HetznerServerResult struct {
 		Server HetznerServerRef `json:"server"`
 	}
 
@@ -62,5 +62,28 @@ type (
 		Id        int    `json:"id"`
 		Name      string `json:"name"`
 		PublicKey string `json:"public_key,omitempty"`
+	}
+
+	HetznerActionsResponse struct {
+		Actions []HetznerAction `json:"actions"`
+	}
+
+	HetznerAction struct {
+		Command   string                  `json:"command"`
+		Status    string                  `json:"status"`
+		Error     HetznerActionError      `json:"error"`
+		Started   time.Time               `json:"started"`
+		Finished  time.Time               `json:"finished"`
+		Resources []HetznerActionResource `json:"resources"`
+	}
+
+	HetznerActionError struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}
+
+	HetznerActionResource struct {
+		Id   int    `json:"id"`
+		Type string `json:"type"`
 	}
 )

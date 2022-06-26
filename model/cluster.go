@@ -60,7 +60,7 @@ func (c *Cluster) Bootstrap(actions Actions) error {
 	log.Printf("Looking for bootstrap API server %s\n", bootstrapNodeName)
 
 	k8sVersion := c.Status.Versions.Target // TODO would be safer to read it from the Node resource in K8s (avoids race condition)
-	nodeStatus, err := actions.GetServer(bootstrapNodeName, true, k8sVersion)
+	nodeStatus, err := actions.GetBootstrapServer(bootstrapNodeName, true, k8sVersion)
 	if err != nil {
 		return err
 	}
