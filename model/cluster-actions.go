@@ -85,7 +85,10 @@ func (c ClusterActions) GetReleaseChannels() (ReleaseChannelStatuses, error) {
 
 func (c ClusterActions) GetBootstrapServer(name string, apiServer bool, kubernetesVersion *semver.Version) (*NodeStatus, error) {
 	hetznerServers := &HetznerServersResponse{}
-	c.hetzner.Do(http.MethodGet, "/servers?name="+name, nil, nil, hetznerServers)
+	err := c.hetzner.Do(http.MethodGet, "/servers?name="+name, nil, nil, hetznerServers)
+	if err != nil {
+		return nil, err
+	}
 	server := hetznerServers.Servers[0]
 	network := server.PrivateNets[0]
 	return &NodeStatus{
