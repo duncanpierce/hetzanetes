@@ -10,11 +10,16 @@ metadata:
   name: edit-hetzanetes
 rules:
   - apiGroups: ["hetzanetes.duncanpierce.org"]
-    resources: ["clusters", "clusters/status"]
+    resources:
+    - "clusters"
+    - "clusters/status"
     verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
   - apiGroups: [""]
-    resources: ["nodes"]
-    verbs: ["get", "watch", "list"]
+    resources:
+    - "nodes"
+    - "pods"
+    - "pods/eviction"
+    verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/Masterminds/semver"
+	"github.com/duncanpierce/hetzanetes/catch"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/rest"
@@ -23,7 +24,10 @@ type (
 	}
 )
 
-var _ Actions = ClusterActions{}
+var (
+	_              Actions = ClusterActions{}
+	strategicMerge         = map[string]string{"Content-Type": "application/merge-patch+json"}
+)
 
 func NewClusterClient() *ClusterActions {
 	return &ClusterActions{
@@ -188,8 +192,39 @@ func (c ClusterActions) DeleteServer(node NodeStatus) (notFound bool) {
 
 func (c ClusterActions) DrainNode(node NodeStatus) error {
 	log.Printf("Draining node %#v\n", node)
-	//TODO implement me
-	return nil
+	nodePatch := &NodeResource{
+		Spec: &NodeResourceSpec{
+			Unschedulable: true,
+		},
+	}
+	// cordon
+	err := c.kubernetes.Do(http.MethodPatch, "/api/v1/nodes/"+node.Name, strategicMerge, nodePatch, nil)
+	if err != nil {
+		return err
+	}
+	// get all pods on the node
+	podList := &PodResourceList{}
+	err = c.kubernetes.Do(http.MethodGet, "/api/v1/pods?fieldSelector=spec.nodeName%3D"+node.Name, nil, nil, podList)
+	if err != nil {
+		return err
+	}
+	log.Printf("Need to evict %d pods found on node '%s'\n", len(podList.Items), node.Name)
+	// evict each pod
+	errs := &catch.Errors{}
+	for _, pod := range podList.Items {
+		// TODO ignore pods owned by "apiVersion: apps/v1, kind: DaemonSet"
+		log.Printf("Evicting pod '%s' in namespace '%s'\n", pod.Metadata.Name, pod.Metadata.Namespace)
+		eviction := &PodEviction{
+			ApiVersion: "policy/v1",
+			Kind:       "Eviction",
+			Metadata: PodEvictionMetadata{
+				Name:      pod.Metadata.Name,
+				Namespace: pod.Metadata.Namespace,
+			},
+		}
+		errs.Add(c.kubernetes.Do(http.MethodPost, fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/eviction", pod.Metadata.Namespace, pod.Metadata.Name), rest.JSON(), eviction, nil))
+	}
+	return errs.OrNil()
 }
 
 func (c ClusterActions) GetKubernetesNode(node NodeStatus) (*NodeResource, error) {
@@ -209,7 +244,7 @@ func (c ClusterActions) DeleteNode(node NodeStatus) error {
 
 func (c ClusterActions) GetClusterList() (*ClusterList, error) {
 	var clusterList ClusterList
-	err := c.kubernetes.Do(http.MethodGet, "/apis/hetzanetes.duncanpierce.org/v1/clusters", map[string]string{}, nil, &clusterList)
+	err := c.kubernetes.Do(http.MethodGet, "/apis/hetzanetes.duncanpierce.org/v1/clusters", nil, nil, &clusterList)
 	return &clusterList, err
 }
 
@@ -217,10 +252,7 @@ func (c ClusterActions) SaveStatus(clusterName string, status *ClusterStatus) er
 	patch := Cluster{
 		Status: status,
 	}
-	headers := map[string]string{
-		"Content-Type": "application/merge-patch+json",
-	}
-	return c.kubernetes.Do(http.MethodPatch, "/apis/hetzanetes.duncanpierce.org/v1/clusters/"+clusterName+"/status", headers, patch, nil)
+	return c.kubernetes.Do(http.MethodPatch, "/apis/hetzanetes.duncanpierce.org/v1/clusters/"+clusterName+"/status", strategicMerge, patch, nil)
 }
 
 func (c ClusterActions) GetSshKeyIds() (keyIds []int, err error) {

@@ -28,7 +28,8 @@ func JSON() map[string]string {
 }
 
 func (k *Client) DoRaw(method string, path string, headers map[string]string, requestBody []byte) ([]byte, error) {
-	request, err := http.NewRequest(method, k.BaseUrl+path, nil)
+	fullUrl := k.BaseUrl + path
+	request, err := http.NewRequest(method, fullUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +58,7 @@ func (k *Client) DoRaw(method string, path string, headers map[string]string, re
 		return responseBody, Conflict
 	default:
 		if response.StatusCode >= 400 {
-			return responseBody, fmt.Errorf("got status code %d from Kubernetes API", response.StatusCode)
+			return responseBody, fmt.Errorf("got status code %d from REST API (%s %s)", response.StatusCode, method, fullUrl)
 		}
 		return responseBody, err
 	}

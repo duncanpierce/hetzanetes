@@ -85,3 +85,4 @@ UNINSTALL:
 EVICTION:
 
 * https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/
+* https://stackoverflow.com/questions/57189208/what-are-the-api-involved-during-kubectl-cordon-and-drain-command

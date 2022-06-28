@@ -6,7 +6,12 @@ type (
 	}
 
 	NodeResource struct {
-		Status NodeResourceStatus `json:"status,omitempty"`
+		Spec   *NodeResourceSpec   `json:"spec,omitempty"`
+		Status *NodeResourceStatus `json:"status,omitempty"`
+	}
+
+	NodeResourceSpec struct {
+		Unschedulable bool `json:"unschedulable,omitempty"`
 	}
 
 	NodeResourceStatus struct {
@@ -16,6 +21,37 @@ type (
 	NodeResourceCondition struct {
 		Status string `json:"status,omitempty"`
 		Type   string `json:"type,omitempty"`
+	}
+
+	PodResourceList struct {
+		Items []PodResource `json:"items"`
+	}
+
+	PodResource struct {
+		Metadata *PodMetadata `json:"metadata,omitempty"`
+	}
+
+	PodMetadata struct {
+		Name            string               `json:"name,omitempty"`
+		Namespace       string               `json:"namespace,omitempty"`
+		OwnerReferences []*PodOwnerReference `json:"ownerReferences,omitempty"`
+	}
+
+	PodOwnerReference struct {
+		ApiVersion string `json:"apiVersion,omitempty"`
+		Kind       string `json:"kind,omitempty"`
+		Name       string `json:"name,omitempty"`
+	}
+
+	PodEviction struct {
+		ApiVersion string `json:"apiVersion"`
+		Kind       string `json:"kind"`
+		Metadata   PodEvictionMetadata
+	}
+
+	PodEvictionMetadata struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
 	}
 )
 
