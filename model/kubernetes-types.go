@@ -44,9 +44,9 @@ type (
 	}
 
 	PodEviction struct {
-		ApiVersion string `json:"apiVersion"`
-		Kind       string `json:"kind"`
-		Metadata   PodEvictionMetadata
+		ApiVersion string              `json:"apiVersion"`
+		Kind       string              `json:"kind"`
+		Metadata   PodEvictionMetadata `json:"metadata,omitempty"`
 	}
 
 	PodEvictionMetadata struct {
