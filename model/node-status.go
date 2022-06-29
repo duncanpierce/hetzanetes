@@ -88,6 +88,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Draining:
+		// TODO draining is complete as soon as there are no non-DaemonSet pods - the timeout should be an upper limit (and should be higher)
 		if LongerThan(3 * time.Minute)(*n) {
 			err := actions.DeleteNode(*n) // TODO might fail if we go straight from Create/Join to Delete with node ever registering
 			if err == nil {
@@ -99,7 +100,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 
 	case Deleting:
 		_, err = actions.GetKubernetesNode(*n)
-		if err == rest.NotFound {
+		if err == rest.NotFound && LongerThan(2*time.Minute)(*n) {
 			notFound := actions.DeleteServer(*n)
 			if notFound {
 				n.SetPhase(Deleted, "")

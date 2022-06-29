@@ -57,18 +57,18 @@ func NewKubernetes() *rest.Client {
 		panic(err)
 	}
 	return &rest.Client{
-		BaseUrl: "https://kubernetes.default.svc",
-		Http:    client,
-		Token:   string(tokenFile),
+		BaseUrl:     "https://kubernetes.default.svc",
+		Http:        client,
+		Token:       string(tokenFile),
+		LogResponse: true,
 	}
 }
 
 func NewHetzner(token string) *rest.Client {
 	return &rest.Client{
-		BaseUrl:     "https://api.hetzner.cloud/v1",
-		Http:        http.Client{},
-		Token:       token,
-		LogResponse: true,
+		BaseUrl: "https://api.hetzner.cloud/v1",
+		Http:    http.Client{},
+		Token:   token,
 	}
 }
 func NewK3s() *rest.Client {
@@ -186,7 +186,7 @@ func (c ClusterActions) DeleteServer(node NodeStatus) (notFound bool) {
 		log.Printf("Error: deleting server with no cloudId")
 		return false
 	} else {
-		return c.hetzner.Do(http.MethodDelete, "/servers"+node.CloudId, nil, nil, nil) == rest.NotFound
+		return c.hetzner.Do(http.MethodDelete, "/servers/"+node.CloudId, nil, nil, nil) == rest.NotFound
 	}
 }
 
@@ -239,7 +239,7 @@ func (c ClusterActions) GetKubernetesNode(node NodeStatus) (*NodeResource, error
 
 func (c ClusterActions) DeleteNode(node NodeStatus) error {
 	log.Printf("Deleting node %#v with id %s\n", node, node.CloudId)
-	return c.hetzner.Do(http.MethodDelete, "/servers/"+node.CloudId, nil, nil, nil)
+	return c.kubernetes.Do(http.MethodDelete, "/api/v1/nodes/"+node.Name, nil, nil, nil)
 }
 
 func (c ClusterActions) GetClusterList() (*ClusterList, error) {
