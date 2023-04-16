@@ -3,9 +3,9 @@
 A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https://www.hetzner.com/cloud).
 
 * The cluster manages itself using a `Cluster` [Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
-* Avoids local configuration files. You can reconfigure the cluster using `kubectl edit cluster/<NAME>`.
-* Self-repairing (currently with some limitations).
-* Number of API servers and workers can be changed at any time.
+* Avoids local configuration files. You can reconfigure the cluster using `kubectl edit cluster/<NAME>`. The cluster can even reconfigure itself.
+* Self-repairing, so if a node is deleted, Hetzanetes will replace it.
+* Number of API servers and workers can be changed without stopping the cluster.
 * Sets up Rancher's lightweight [K3s Kubernetes distribution](https://github.com/rancher/k3s/).
 * Sets up a firewall and private network for the cluster.
 * Install Hetzner's [cloud controller manager](https://github.com/hetznercloud/hcloud-cloud-controller-manager) and [storage volume](https://github.com/hetznercloud/csi-driver) plugins, so volume and load balancer resources work.
@@ -13,13 +13,11 @@ A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https:/
 ## Current limitations
 
 * Downsizing the API server node set can hang the cluster. Worker node pools can be downsized.
-* Servers are not deleted gracefully.
 * Cannot manage other clusters, even though you could have more than one `Cluster` resource, in theory.
-* Deleting a cluster doesn't always remove the private network and firewalls.
 
 ## Getting started
 
-1. Create a Hetzner Cloud project, if you don't already have one.
+1. Create a Hetzner Cloud project, if you don't already have one. If this is your first time using Hetzner Cloud, you can get free service credit using [this referral link](https://hetzner.cloud/?ref=0obWH96gyXNL) (disclosure: I may also receive a service credit).
 2. Create a read+write API Token in that project (under **Security > API Tokens**), if you don't already have one.
 3. Assign the API Token to an environment variable named `HCLOUD_TOKEN`.
 4. Run `hetzanetes create test` to create a cluster called `test`.
