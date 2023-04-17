@@ -1,3 +1,5 @@
+[![CodeQL](https://github.com/duncanpierce/hetzanetes/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/duncanpierce/hetzanetes/actions/workflows/github-code-scanning/codeql)
+
 # Hetzanetes
 
 A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https://www.hetzner.com/cloud).
