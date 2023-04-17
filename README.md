@@ -2,7 +2,7 @@
 
 # Hetzanetes
 
-A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https://www.hetzner.com/cloud).
+Create self-managing [Rancher](https://www.rancher.com/products/k3s) [K3s](https://github.com/k3s-io/k3s) Kubernetes clusters on [Hetzner Cloud](https://www.hetzner.com/cloud).
 
 * The cluster manages itself using a `Cluster` [Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 * Avoids local configuration files. You can reconfigure the cluster using `kubectl edit cluster/<NAME>`. The cluster can even reconfigure itself.
@@ -19,7 +19,7 @@ A simple way to set up and manage Kubernetes clusters on [Hetzner Cloud](https:/
 
 ## Getting started
 
-1. Create a Hetzner Cloud project, if you don't already have one. If this is your first time using Hetzner Cloud, you can get free service credit using [this referral link](https://hetzner.cloud/?ref=0obWH96gyXNL) (disclosure: I may also receive a service credit).
+1. Create a Hetzner Cloud project, if you don't already have one. If this is your first time using Hetzner Cloud, you can get [free service credit using this referral link](https://hetzner.cloud/?ref=0obWH96gyXNL) (disclosure: I may also receive a service credit).
 2. Create a read+write API Token in that project (under **Security > API Tokens**), if you don't already have one.
 3. Assign the API Token to an environment variable named `HCLOUD_TOKEN`.
 4. Run `hetzanetes create test` to create a cluster called `test`.
