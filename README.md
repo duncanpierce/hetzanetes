@@ -22,7 +22,7 @@ Create self-managing [Rancher](https://www.rancher.com/products/k3s) [K3s](https
 1. Create a Hetzner Cloud project, if you don't already have one. If this is your first time using Hetzner Cloud, you can get [free service credit using this referral link](https://hetzner.cloud/?ref=0obWH96gyXNL) (disclosure: I may also receive a service credit).
 2. Create a read+write API Token in that project (under **Security > API Tokens**), if you don't already have one.
 3. Assign the API Token to an environment variable named `HCLOUD_TOKEN`.
-4. Run `hetzanetes create test` to create a cluster called `test`.
+4. Run `hetzanetes create test` to create a cluster called `test`. Or, using Docker: `docker run -e HCLOUD_TOKEN ghcr.io/duncanpierce/hetzanetes create text`.
 5. Wait patiently while a private network, firewall and first Kubernetes API server are created, security updates are installed, server rebooted, Hetzner's Kubernetes plugins installed.
 6. Once ready, the first API server will read the `Cluster` custom resource and create more API servers and workers as needed.
 7. From this point on, the cluster is self-managing. The complete process takes around 10 minutes using CX11 servers.

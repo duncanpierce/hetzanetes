@@ -13,7 +13,7 @@ runcmd:
 {{indent 4 .SshPublicKey}}
     END_SSH_PUBLIC_KEY
   - kubectl create secret generic ssh -n kube-system --from-file=SSH_PRIVATE_KEY={{.InstallDirectory}}/SSH_PRIVATE_KEY --from-file=SSH_PUBLIC_KEY={{.InstallDirectory}}/SSH_PUBLIC_KEY
-  - docker run -v {{.InstallDirectory}}:/install -w /install duncanpierce/hetzanetes:{{.HetzanetesTag}} internal kustomize --pod-ip-range={{.PodIpRange}} --hetzanetes-tag={{.HetzanetesTag}}
+  - docker run -v {{.InstallDirectory}}:/install -w /install ghcr.io/duncanpierce/hetzanetes:{{.HetzanetesTag}} internal kustomize --pod-ip-range={{.PodIpRange}} --hetzanetes-tag={{.HetzanetesTag}}
   - kubectl apply -k {{.InstallDirectory}}
   - |
     cat > {{.InstallDirectory}}/cluster.yaml << END_CLUSTER_YAML
