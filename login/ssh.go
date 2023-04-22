@@ -12,7 +12,7 @@ import (
 func NewSshKey() (string, string, error) {
 	var privateKeyBuffer, publicKeyBuffer strings.Builder
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return "", "", err
 	}
