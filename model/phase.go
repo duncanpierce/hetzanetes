@@ -4,7 +4,7 @@ const (
 	// until we switch to SSH, the flow is simpler and misses some setup steps which are done by Cloudinit
 
 	Create     = Phase("create")     // signal to start provisioning process
-	Creating   = Phase("creating")   // Cloud API has been called to create node, attach firewall and network, store SSH key - next action: probe until SSH login works
+	Creating   = Phase("creating")   // Cloud API has been called to create node, attach firewall and network, store SSH key - probe until SSH login works and cloud-init status --format=json has status: done then move to Installing
 	Updating   = Phase("updating")   // have logged in, running apt update, apt upgrade, reboot, wait until it disconnects for reboot then go to installing phase
 	Installing = Phase("installing") // probe until SSH login works, install K3s using secret, disconnect, wait for Node resource to appear
 	Joining    = Phase("joining")    // wait for Node resource to reach Active state (is this step worth having separate from previous? might help with recovering from crash?)
