@@ -199,6 +199,9 @@ func Create() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Creating server %s in %s...\n", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
+
+			hostPort := fmt.Sprintf("%s:22", serverCreateResult.Server.PublicNet.IPv4.IP)
+			login.AwaitCloudInit(hostPort, privateKey)
 			return c.Await(serverCreateResult.Action)
 		},
 	}

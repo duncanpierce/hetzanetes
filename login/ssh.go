@@ -41,10 +41,11 @@ func Connect(hostPort string, privateKey string, timeout time.Duration, wait tim
 		return nil, nil, fmt.Errorf("cannot parse SSH key: %w", err)
 	}
 	config := &ssh.ClientConfig{
-		Config:  ssh.Config{},
-		User:    "root",
-		Auth:    []ssh.AuthMethod{ssh.PublicKeys(key)},
-		Timeout: timeout,
+		Config:          ssh.Config{},
+		User:            "root",
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(key)},
+		Timeout:         timeout,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	for try := 0; try < maxTries; try++ {
 		client, err := ssh.Dial("tcp", hostPort, config)
@@ -80,4 +81,27 @@ func Run(hostPort string, privateKey string, timeout time.Duration, wait time.Du
 		}
 	}
 	return nil
+}
+
+func AwaitCloudInit(hostPort string, privateKey string) {
+	wait := time.NewTicker(10 * time.Second)
+	defer wait.Stop()
+	for range wait.C {
+		fmt.Printf("polling cloudinit on %s\n", hostPort)
+		done := PollCloudInit(hostPort, privateKey)
+		if done {
+			return
+		}
+	}
+}
+
+func PollCloudInit(hostPort string, privateKey string) (done bool) {
+	client, session, err := Connect(hostPort, privateKey, 3*time.Second, 0, 1)
+	if err != nil {
+		return false
+	}
+	defer client.Close()
+	defer session.Close()
+	err = session.Run("cloud-init status --format=json | jq -e '.status==\"done\"'")
+	return err == nil
 }
