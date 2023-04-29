@@ -2,8 +2,8 @@ package model
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"log"
+	"math/rand"
 	"time"
 )
 

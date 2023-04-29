@@ -11,7 +11,7 @@ import (
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	yaml "gopkg.in/yaml.v3"
 	"net"
 	"os"
 	"strconv"

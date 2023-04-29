@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/model"
 	"io"
-	"k8s.io/apimachinery/pkg/util/json"
 	"net/http"
 	"os"
 )

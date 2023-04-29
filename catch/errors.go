@@ -1,7 +1,6 @@
 package catch
 
 import (
-	"github.com/hetznercloud/hcloud-go/hcloud"
 	"strings"
 	"time"
 )
@@ -14,10 +13,6 @@ func (errs Errors) Error() string {
 		errStrings = append(errStrings, err.Error())
 	}
 	return strings.Join(errStrings, "\n")
-}
-
-func (errs *Errors) Catch(_ *hcloud.Response, err error) {
-	errs.Add(err)
 }
 
 func (errs Errors) OrNil() error {

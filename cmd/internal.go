@@ -15,7 +15,7 @@ func Internal() *cobra.Command {
 	}
 	cmd.AddCommand(
 		Kustomize(),
-		Spike(),
+		//Spike(),
 		Repair(),
 		Net(),
 		Ssh(),
