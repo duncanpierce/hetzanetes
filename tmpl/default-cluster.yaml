@@ -3,14 +3,10 @@ kind: Cluster
 metadata:
   name: "{{.ClusterName}}"
 spec:
-  versions:
-    baseImage: ubuntu-22.04
-    kubernetes: stable
-    hetzanetes: latest
   nodeSets:
     - name: api
       apiServer: true
-      serverType: cpx11
+      serverType: cx11
       replicas: 1
       locations:
         - hel1

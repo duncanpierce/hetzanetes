@@ -17,10 +17,6 @@ func HCloudToken() string {
 	return Get("HCLOUD_TOKEN", "a Hetzner Cloud API token")
 }
 
-func HCloudNetwork() string {
-	return Get("HCLOUD_NETWORK", "a Hetzner cloud network name")
-}
-
 func HCloudNetworkId() string {
 	return Get("HCLOUD_NETWORK_ID", "a Hetzner cloud network id")
 }
@@ -31,10 +27,6 @@ func HCloudNetworkIpRange() string {
 
 func K3sToken() string {
 	return Get("K3S_TOKEN", "a K3s join token")
-}
-
-func K3sEndpoint() string {
-	return Get("K3S_URL", "a K3s API server endpoint")
 }
 
 func SshPrivateKey() string {

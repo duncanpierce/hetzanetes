@@ -1,12 +1,5 @@
 package model
 
-func (v *VersionsSpec) GetBaseImage() string {
-	if v == nil || v.BaseImage == "" {
-		return "ubuntu-22.04"
-	}
-	return v.BaseImage
-}
-
 func (v VersionsSpec) GetKubernetes() string {
 	if v.Kubernetes == "" {
 		return "stable"

@@ -4,6 +4,8 @@ DOCKER:
 
 CONFIG:
 
+* [Merge kubeconfig files, using direnv](https://ahmet.im/blog/mastering-kubeconfig/)
+* [Kubectl plugins](https://krew.sigs.k8s.io/)
 * https://blog.atomist.com/kubernetes-apply-replace-patch/
 * https://evancordell.com/posts/kube-apis-crds/
 * https://kubernetes.io/docs/tasks/run-application/access-api-from-pod/

@@ -26,3 +26,10 @@ func (n NodeSetsSpec) Named(name string) NodeSetSpec {
 func (n *NodeSetSpec) ServerName(clusterName string, generation int) string {
 	return fmt.Sprintf("%s-%s-%d", clusterName, n.Name, generation)
 }
+
+func (n *NodeSetSpec) GetImageOrDefault() string {
+	if n.Image != "" {
+		return n.Image
+	}
+	return "ubuntu-22.04"
+}

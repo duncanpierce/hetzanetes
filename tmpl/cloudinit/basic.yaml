@@ -6,3 +6,7 @@ packages:
   - "curl"
   - "jq"
 package_reboot_if_required: true
+users:
+  - name: root
+    ssh_authorized_keys:
+      - {{.SshPublicKey}}

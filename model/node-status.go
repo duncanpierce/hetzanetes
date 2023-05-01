@@ -40,9 +40,9 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		config := tmpl.ClusterConfig{
 			KubernetesVersion: kubernetesVersion,
 			ApiEndpoint:       n.JoinEndpoint,
-			JoinToken:         env.K3sToken(), // TODO this should come from a named Secret
+			JoinToken:         env.K3sToken(),
 			PrivateIpRange:    cluster.Status.ClusterNetwork.IpRange,
-			SshPublicKey:      env.SshPublicKey(), // TODO this should come from a named Secret
+			SshPublicKey:      env.SshPublicKey(),
 		}
 		cloudInit := tmpl.Cloudinit(config, templateToUse)
 		log.Printf("Cloudinit for new node %s:\n%s\n\n", n.Name, cloudInit)

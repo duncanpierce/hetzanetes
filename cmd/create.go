@@ -15,6 +15,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 )
 
 func Create() *cobra.Command {
@@ -69,7 +70,6 @@ func Create() *cobra.Command {
 			labels[label.ClusterNameLabel] = cluster.Metadata.Name
 
 			// TODO check for name collisions on network and API server before starting, and also on server and network labels
-			// TODO split this out behind a driver interface to allow --dry-run
 
 			subnets := []hcloud.NetworkSubnet{
 				{
@@ -113,13 +113,13 @@ func Create() *cobra.Command {
 				SshPublicKey:      publicKey,
 				SshPrivateKey:     privateKey,
 			}
-			cloudInit := tmpl.Cloudinit(serverConfig, "create.yaml")
+			cloudInit := tmpl.Cloudinit(serverConfig, "basic.yaml")
 
 			serverType, _, err := c.ServerType.GetByName(c, firstApiServerNodeSet.ServerType)
 			if err != nil {
 				return err
 			}
-			image, _, err := c.Image.GetByName(c, cluster.Spec.Versions.GetBaseImage())
+			image, _, err := c.Image.GetByNameAndArchitecture(c, firstApiServerNodeSet.GetImageOrDefault(), serverType.Architecture)
 			if err != nil {
 				return err
 			}
@@ -202,7 +202,10 @@ func Create() *cobra.Command {
 
 			hostPort := fmt.Sprintf("%s:22", serverCreateResult.Server.PublicNet.IPv4.IP)
 			login.AwaitCloudInit(hostPort, privateKey)
-			return c.Await(serverCreateResult.Action)
+			fmt.Printf("boostrapping cluster\n")
+			commands, env := login.CreateCommands(cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), env.HCloudToken(), privateKey, publicKey)
+			login.Run(hostPort, privateKey, 3*time.Second, env, commands)
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clusterYamlFilename, "filename", "f", "", "Name of YAML file specifying cluster configuration")

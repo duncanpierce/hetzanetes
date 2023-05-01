@@ -51,10 +51,15 @@ spec:
       labels:
         app: hetzanetes-repair
     spec:
+      priorityClassName: system-cluster-critical
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
       serviceAccountName: hetzanetes-repair
       containers:
         - name: repair-cluster
-          image: ghcr.io/duncanpierce/hetzanetes:{{.HetzanetesTag}}
+          image: ghcr.io/duncanpierce/hetzanetes:latest
           imagePullPolicy: Always
           command: ["/hetzanetes", "internal", "repair"]
           envFrom:
