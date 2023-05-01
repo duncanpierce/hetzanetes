@@ -54,31 +54,21 @@ func Connect(hostPort string, privateKey string, timeout time.Duration) (*ssh.Cl
 	return client, nil
 }
 
-func RunOne(client *ssh.Client, env map[string]string, command string) error {
+func RunOne(client *ssh.Client, command string) error {
 	session, err := client.NewSession()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
-
-	for k, v := range env {
-		err = session.Setenv(k, v)
-		if err != nil {
-			fmt.Printf("error setting env var %s=%s %s", k, v, err.Error())
-			return err
-		}
-	}
-
 	err = session.Run(command)
 	if err != nil {
 		fmt.Printf("error running %s: %s", command, err.Error())
 		return err
 	}
-
 	return nil
 }
 
-func Run(hostPort string, privateKey string, timeout time.Duration, env map[string]string, commands []string) error {
+func Run(hostPort string, privateKey string, timeout time.Duration, commands []string) error {
 	client, err := Connect(hostPort, privateKey, timeout)
 	if err != nil {
 		return err
@@ -86,7 +76,7 @@ func Run(hostPort string, privateKey string, timeout time.Duration, env map[stri
 	defer client.Close()
 
 	for _, command := range commands {
-		err = RunOne(client, env, command)
+		err = RunOne(client, command)
 		if err != nil {
 			return err
 		}

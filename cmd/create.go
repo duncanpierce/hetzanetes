@@ -203,8 +203,8 @@ func Create() *cobra.Command {
 			hostPort := fmt.Sprintf("%s:22", serverCreateResult.Server.PublicNet.IPv4.IP)
 			login.AwaitCloudInit(hostPort, privateKey)
 			fmt.Printf("boostrapping cluster\n")
-			commands, env := login.CreateCommands(cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), env.HCloudToken(), privateKey, publicKey)
-			login.Run(hostPort, privateKey, 3*time.Second, env, commands)
+			commands := login.CreateCommands(cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), env.HCloudToken(), privateKey, publicKey)
+			login.Run(hostPort, privateKey, 3*time.Second, commands)
 			return nil
 		},
 	}
