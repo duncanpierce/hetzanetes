@@ -1,6 +1,9 @@
 package login
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/duncanpierce/hetzanetes/tmpl"
+)
 
 var (
 	apiCommonConfig     = "--disable servicelb --disable local-storage --disable-cloud-controller --kubelet-arg cloud-provider=external"
@@ -8,12 +11,18 @@ var (
 )
 
 func CreateCommands(clusterName, privateNetworkId, privateIpRange, k3sReleaseChannel, hcloudToken, sshPrivateKey, sshPublicKey string) []string {
-	return []string{
-		fmt.Sprintf("curl -sfL 'https://get.k3s.io' | INSTALL_K3S_CHANNEL=%s sh -s - server --cluster-init %s --flannel-iface=%s", k3sReleaseChannel, apiCommonConfig, getPrivateInterface),
-		fmt.Sprintf("kubectl create secret generic hcloud -n kube-system --from-literal=HCLOUD_TOKEN=%s --from-literal=HCLOUD_NETWORK=%s --from-literal=HCLOUD_NETWORK_ID=%s --from-literal=HCLOUD_NETWORK_IP_RANGE=%s", hcloudToken, clusterName, privateNetworkId, privateIpRange),
-		"kubectl create secret generic k3s -n kube-system --from-file=K3S_TOKEN=/var/lib/rancher/k3s/server/token",
-		fmt.Sprintf("kubectl create secret generic ssh -n kube-system --from-literal=SSH_PRIVATE_KEY='%s' --from-literal=SSH_PUBLIC_KEY='%s'", sshPrivateKey, sshPublicKey),
-	}
+	sendKustomizeFiles, _ := tmpl.SendKustomizeFileCommands()
+	return append(append(
+		[]string{
+			fmt.Sprintf("curl -sfL 'https://get.k3s.io' | INSTALL_K3S_CHANNEL=%s sh -s - server --cluster-init %s --flannel-iface=%s", k3sReleaseChannel, apiCommonConfig, getPrivateInterface),
+			fmt.Sprintf("kubectl create secret generic hcloud -n kube-system --from-literal=HCLOUD_TOKEN=%s --from-literal=HCLOUD_NETWORK=%s --from-literal=HCLOUD_NETWORK_ID=%s --from-literal=HCLOUD_NETWORK_IP_RANGE=%s", hcloudToken, clusterName, privateNetworkId, privateIpRange),
+			fmt.Sprintf("kubectl create secret generic k3s -n kube-system --from-file=K3S_TOKEN=/var/lib/rancher/k3s/server/token"),
+			fmt.Sprintf("kubectl create secret generic ssh -n kube-system --from-literal=SSH_PRIVATE_KEY='%s' --from-literal=SSH_PUBLIC_KEY='%s'", sshPrivateKey, sshPublicKey),
+		},
+		sendKustomizeFiles...,
+	),
+		fmt.Sprintf("kubectl apply -k ."),
+	)
 }
 
 func AddWorkerCommands(apiEndPoint, k3sJoinToken, k3sVersion string) []string {

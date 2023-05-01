@@ -6,6 +6,6 @@ resources:
   - cluster-crd.yaml
   - repair-cluster.yaml
   - https://github.com/hetznercloud/hcloud-cloud-controller-manager/releases/latest/download/ccm-networks.yaml
-  - https://raw.githubusercontent.com/hetznercloud/csi-driver/main/deploy/kustomization.yaml
+  - https://raw.githubusercontent.com/hetznercloud/csi-driver/main/deploy/kubernetes/hcloud-csi.yml
 patches:
   - patch.yaml

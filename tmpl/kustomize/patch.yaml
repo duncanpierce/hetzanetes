@@ -14,7 +14,7 @@ spec:
             - "--leader-elect=false"
             - "--allow-untagged-cloud"
             - "--allocate-node-cidrs=true"
-            - "--cluster-cidr={{.PodIpRange}}"
+            - "--cluster-cidr=10.42.0.0/16"
           env:
             - name: HCLOUD_TOKEN
               valueFrom:
@@ -47,7 +47,7 @@ spec:
                   name: hcloud
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: hcloud-csi-controller
   namespace: kube-system

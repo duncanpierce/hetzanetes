@@ -71,6 +71,19 @@ func WriteKustomizeFiles(config ClusterConfig) error {
 	return nil
 }
 
+func SendKustomizeFileCommands() ([]string, error) {
+	var commands []string
+	for _, tpl := range Parse(kustomize, "kustomize").Templates() {
+		buffer := &bytes.Buffer{}
+		err := tpl.Execute(buffer, nil)
+		if err != nil {
+			return nil, err
+		}
+		commands = append(commands, fmt.Sprintf("echo '%s' > '%s'", buffer.String(), tpl.Name()))
+	}
+	return commands, nil
+}
+
 func DefaultClusterFile(clusterName string) ([]byte, error) {
 	t, err := template.New("default").Parse(defaultCluster)
 	if err != nil {

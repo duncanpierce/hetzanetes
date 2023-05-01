@@ -99,7 +99,7 @@ func Create() *cobra.Command {
 				return err
 			}
 
-			serverConfig := tmpl.ClusterConfig{
+			config := tmpl.ClusterConfig{
 				HetznerApiToken:   apiToken,
 				ClusterName:       cluster.Metadata.Name,
 				ClusterNetworkId:  strconv.Itoa(network.ID),
@@ -113,7 +113,7 @@ func Create() *cobra.Command {
 				SshPublicKey:      publicKey,
 				SshPrivateKey:     privateKey,
 			}
-			cloudInit := tmpl.Cloudinit(serverConfig, "basic.yaml")
+			cloudInit := tmpl.Cloudinit(config, "basic.yaml")
 
 			serverType, _, err := c.ServerType.GetByName(c, firstApiServerNodeSet.ServerType)
 			if err != nil {
