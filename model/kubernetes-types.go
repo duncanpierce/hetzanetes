@@ -1,5 +1,9 @@
 package model
 
+import (
+	"github.com/Masterminds/semver"
+)
+
 type (
 	ClusterList struct {
 		Items Clusters `json:"items"`
@@ -16,6 +20,12 @@ type (
 
 	NodeResourceStatus struct {
 		Conditions []NodeResourceCondition `json:"conditions,omitempty"`
+		NodeInfo   NodeInfo                `json:"nodeInfo,omitempty"`
+	}
+
+	NodeInfo struct {
+		Architecture   string          `json:"architecture,omitempty"`
+		KubeletVersion *semver.Version `json:"kubeletVersion,omitempty"`
 	}
 
 	NodeResourceCondition struct {

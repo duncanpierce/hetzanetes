@@ -2,10 +2,10 @@ package model
 
 import (
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/client/rest"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
-	"github.com/duncanpierce/hetzanetes/rest"
-	"github.com/duncanpierce/hetzanetes/tmpl"
+	"github.com/duncanpierce/hetzanetes/login"
 	"log"
 	"time"
 )
@@ -19,58 +19,62 @@ func (n *NodeStatus) SetPhase(phase Phase, reason string) {
 }
 
 func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
+	sshHostPort := fmt.Sprintf("%s:22", n.ClusterIP)
 	var err error
 
 	switch n.Phases.Current().Phase {
 
 	case Create:
-		var templateToUse string
 		labels := label.Labels{}
-		labels.Set(label.ClusterNameLabel, cluster.Metadata.Name)
+		labels.Set(label.Cluster, cluster.Metadata.Name)
 
 		if n.ApiServer {
-			templateToUse = "add-api-server.yaml"
-			labels.Mark(label.ApiServerLabel)
+			labels.Mark(label.ApiServer)
 		} else {
-			templateToUse = "add-worker.yaml"
-			labels.Mark(label.WorkerLabel)
+			labels.Mark(label.Worker)
 		}
 		kubernetesVersion := fmt.Sprintf("v%s", cluster.Status.Versions.NewNodeVersion(n.ApiServer).String())
 		log.Printf("Version %s chosen for node %s\n", kubernetesVersion, n.Name)
-		config := tmpl.ClusterConfig{
-			KubernetesVersion: kubernetesVersion,
-			ApiEndpoint:       n.JoinEndpoint,
-			JoinToken:         env.K3sToken(),
-			PrivateIpRange:    cluster.Status.ClusterNetwork.IpRange,
-			SshPublicKey:      env.SshPublicKey(),
-		}
-		cloudInit := tmpl.Cloudinit(config, templateToUse)
-		log.Printf("Cloudinit for new node %s:\n%s\n\n", n.Name, cloudInit)
 
-		sshKeys, err := actions.GetSshKeyIds()
-		if err != nil {
-			log.Printf("error getting SSH key names: %s\n", err.Error())
-		} else {
-			n.CloudId, n.ClusterIP, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.ClusterNetwork.CloudId, nil, labels, sshKeys, cloudInit)
-			if err == nil {
-				n.SetPhase(Joining, "waiting for node to join") // TODO once we use SSH, next phase will be Creating
-			} else if err == rest.Conflict {
-				log.Printf("Conflict: node %s has already been created\n", n.Name)
-				existingServer, err := actions.GetBootstrapServer(n.Name, n.ApiServer, n.Version)
-				if err != nil {
-					log.Printf("Unable to get existing server '%s' details from Hetzner: %s\n", n.Name, err.Error())
-				} else {
-					n.CloudId = existingServer.CloudId
-					n.ClusterIP = existingServer.ClusterIP
-					n.SetPhase(Joining, "waiting for previously-created node to join")
-				}
+		n.CloudId, n.ClusterIP, err = actions.CreateServer(n.Name, n.ServerType, n.BaseImage, n.Location, cluster.Status.SshPublicKey, cluster.Status.ClusterNetwork.CloudId, nil, labels)
+		if err == nil {
+			n.SetPhase(Creating, "creating server")
+		} else if err == rest.Conflict {
+			log.Printf("Conflict: node %s has already been created\n", n.Name)
+			existingServers, err := actions.GetServers(cluster.Metadata.Name)
+			if err != nil {
+				log.Printf("Unable to get existing servers from Hetzner: %s\n", err.Error())
 			} else {
-				log.Printf("error creating server '%s': %s", n.Name, err.Error())
+				existingServer := existingServers[n.Name]
+				n.CloudId = existingServer.CloudId
+				n.ClusterIP = existingServer.ClusterIP
+				n.SetPhase(Joining, "waiting for previously-created node to join")
 			}
+		} else {
+			log.Printf("error creating server '%s': %s", n.Name, err.Error())
+		}
+
+	case Creating:
+		if login.PollCloudInit(sshHostPort, env.SshPrivateKey()) {
+			n.SetPhase(Install, "server is ready for Kubernetes installation")
+		}
+
+	case Install:
+		var commands []string
+		if n.ApiServer {
+			commands = login.AddApiServerCommands(n.JoinEndpoint, env.K3sToken(), n.Version.String())
+		} else {
+			commands = login.AddWorkerCommands(n.JoinEndpoint, env.K3sToken(), n.Version.String())
+		}
+		err = login.Run(sshHostPort, env.SshPrivateKey(), 3*time.Second, commands)
+		if err != nil {
+			log.Printf("error installing Kubernetes: %s", err.Error())
+		} else {
+			n.SetPhase(Joining, "waiting for node to join")
 		}
 
 	case Joining:
-		nodeResource, err := actions.GetKubernetesNode(*n)
+		nodeResource, err := actions.GetNode((*n).Name)
 		if err != nil {
 			log.Printf("got error from kubernetes api getting node '%s': %s\n", n.Name, err.Error())
 			break
@@ -99,7 +103,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Deleting:
-		_, err = actions.GetKubernetesNode(*n)
+		_, err = actions.GetNode((*n).Name)
 		if err == rest.NotFound && LongerThan(2*time.Minute)(*n) {
 			notFound := actions.DeleteServer(*n)
 			if notFound {

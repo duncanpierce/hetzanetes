@@ -89,7 +89,6 @@ func AwaitCloudInit(hostPort string, privateKey string) {
 	wait := time.NewTicker(10 * time.Second)
 	defer wait.Stop()
 	for range wait.C {
-		fmt.Printf("polling cloudinit on %s\n", hostPort)
 		done := PollCloudInit(hostPort, privateKey)
 		if done {
 			return

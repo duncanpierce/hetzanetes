@@ -7,6 +7,7 @@ import (
 
 type (
 	ClusterStatus struct {
+		SshPublicKey    string               `json:"sshPublicKey"`
 		Versions        *VersionStatus       `json:"versions"`
 		ClusterNetwork  ClusterNetworkStatus `json:"clusterNetwork"`
 		NodeSetStatuses `json:"nodeSets,omitempty"`
@@ -29,6 +30,8 @@ type (
 		Location     string          `json:"location"`
 		CloudId      string          `json:"cloudId,omitempty"`
 		ClusterIP    string          `json:"clusterIP,omitempty"`
+		PublicIPv4   string          `json:"publicIPv4,omitempty"`
+		PublicIPv6   string          `json:"publicIPv6,omitempty"`
 		BaseImage    string          `json:"baseImage,omitempty"`
 		ApiServer    bool            `json:"apiServer,omitempty"`
 		Version      *semver.Version `json:"version,omitempty"`

@@ -1,8 +1,8 @@
 package model
 
 import (
-	"github.com/Masterminds/semver"
 	"github.com/duncanpierce/hetzanetes/label"
+	"github.com/duncanpierce/hetzanetes/model/k3s"
 )
 
 type (
@@ -21,12 +21,13 @@ type (
 	}
 
 	Actions interface {
-		GetBootstrapServer(name string, apiServer bool, kubernetesVersion *semver.Version) (*NodeStatus, error)
-		GetReleaseChannels() (ReleaseChannelStatuses, error)
-		CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeyIds []int, cloudInit string) (cloudId string, clusterIP string, err error)
+		GetServer(name string) (*NodeStatus, error)
+		GetServers(clusterName string) (map[string]*NodeStatus, error)
+		GetReleaseChannels() (k3s.ReleaseChannelStatuses, error)
+		CreateServer(name string, serverType string, image string, location string, sshPublicKey string, privateNetworkId string, firewallIds []string, labels label.Labels) (cloudId string, clusterIP string, err error)
 		DeleteServer(node NodeStatus) (notFound bool)
 		DrainNode(node NodeStatus) error
-		GetKubernetesNode(node NodeStatus) (*NodeResource, error)
+		GetNode(name string) (*NodeResource, error)
 		DeleteNode(node NodeStatus) error
 		SaveStatus(clusterName string, clusterStatus *ClusterStatus) error
 		GetSshKeyIds() ([]int, error)

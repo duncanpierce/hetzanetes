@@ -6,6 +6,10 @@ import (
 	"log"
 )
 
+func (c *Cluster) Create(actions Actions, privateNetworkId string, sshPublicKey string) error {
+	return c.Spec.NodeSets.Create(c, actions, privateNetworkId, sshPublicKey)
+}
+
 func (c *Cluster) Repair(actions Actions) error {
 	if c.Status == nil {
 		log.Printf("No status found - bootstrapping\n")
@@ -34,8 +38,16 @@ func (c *Cluster) CreateNodeSetStatusesIfNecessary() {
 	}
 }
 
+func (c *Cluster) BootstrapApiServerName() (string, error) {
+	bootstrapApiServerNodeSet := c.Spec.NodeSets.BootstrapApiServerNodeSet()
+	if bootstrapApiServerNodeSet == nil {
+		return "", fmt.Errorf("cluster does not have an API server")
+	}
+	return GetServerName(c.Metadata.Name, bootstrapApiServerNodeSet.Name, 1), nil
+}
+
 func (c *Cluster) Bootstrap(actions Actions) error {
-	log.Printf("Initializing status field\n")
+	log.Printf("Initializing cluster %s status field\n", c.Metadata.Name)
 	c.Status = &ClusterStatus{
 		Versions: &VersionStatus{},
 		ClusterNetwork: ClusterNetworkStatus{
@@ -50,23 +62,11 @@ func (c *Cluster) Bootstrap(actions Actions) error {
 		return err
 	}
 
-	log.Printf("Creating nodeSet statuses\n")
-	c.CreateNodeSetStatusesIfNecessary()
-
-	bootstrapApiNodeSetName := c.Spec.NodeSets.FirstApiServerNodeSet().Name
-	nodeSetStatus := c.Status.NodeSetStatuses.Named(bootstrapApiNodeSetName)
-	nodeSetStatus.Generation = 1
-	bootstrapNodeName := fmt.Sprintf("%s-%s-%d", c.Metadata.Name, bootstrapApiNodeSetName, 1)
-	log.Printf("Looking for bootstrap API server %s\n", bootstrapNodeName)
-
-	k8sVersion := c.Status.Versions.Target // TODO would be safer to read it from the Node resource in K8s (avoids race condition)
-	nodeStatus, err := actions.GetBootstrapServer(bootstrapNodeName, true, k8sVersion)
+	servers, err := actions.GetServers(c.Metadata.Name)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Adding bootstrap node %#v to node status\n", nodeStatus)
-	nodeSetStatus.NodeStatuses = append(nodeSetStatus.NodeStatuses, nodeStatus)
-
+	c.Status.NodeSetStatuses.BootstrapFrom(c, servers)
 	return nil
 }

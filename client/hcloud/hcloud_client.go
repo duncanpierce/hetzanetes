@@ -1,4 +1,4 @@
-package hcloud_client
+package hcloud
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package k8s_client
+package k8s
 
 import (
 	"bytes"

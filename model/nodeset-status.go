@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func (n NodeSetStatuses) Named(name string) *NodeSetStatus {
-	for _, nodeSetStatus := range n {
+func (n *NodeSetStatuses) Named(name string) *NodeSetStatus {
+	for _, nodeSetStatus := range *n {
 		if nodeSetStatus.Name == name {
 			return nodeSetStatus
 		}
@@ -23,6 +23,34 @@ func (n *NodeSetStatuses) CreateIfNecessary(spec *NodeSetSpec) {
 			Name:         spec.Name,
 			Generation:   0,
 			NodeStatuses: NodeStatuses{},
+		})
+	}
+}
+
+func (n *NodeSetStatuses) BootstrapFrom(cluster *Cluster, servers map[string]*NodeStatus) {
+	bootstrapApiServerName, _ := cluster.BootstrapApiServerName()
+	for _, nodeSet := range cluster.Spec.NodeSets {
+		replica := 1
+		nodeStatuses := NodeStatuses{}
+
+		for ; replica <= nodeSet.Replicas; replica++ {
+			serverName := GetServerName(cluster.Metadata.Name, nodeSet.Name, replica)
+			server, found := servers[serverName]
+			if found {
+				server.ApiServer = nodeSet.ApiServer
+				server.SetPhase(Creating, "bootstrap server starting up")
+				if serverName == bootstrapApiServerName {
+					server.SetPhase(Install, "bootstrap api server preinstalled")
+					server.SetPhase(Active, "bootstrap api server active")
+				}
+				nodeStatuses = append(nodeStatuses, server)
+			}
+		}
+
+		*n = append(*n, &NodeSetStatus{
+			Name:         nodeSet.Name,
+			Generation:   replica,
+			NodeStatuses: nodeStatuses,
 		})
 	}
 }

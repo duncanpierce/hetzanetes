@@ -4,11 +4,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/Masterminds/semver"
 	"github.com/duncanpierce/hetzanetes/catch"
+	"github.com/duncanpierce/hetzanetes/client/rest"
 	"github.com/duncanpierce/hetzanetes/env"
 	"github.com/duncanpierce/hetzanetes/label"
-	"github.com/duncanpierce/hetzanetes/rest"
+	"github.com/duncanpierce/hetzanetes/model/hetzner"
+	"github.com/duncanpierce/hetzanetes/model/k3s"
 	"log"
 	"net/http"
 	"os"
@@ -29,7 +30,7 @@ var (
 	strategicMerge         = map[string]string{"Content-Type": "application/merge-patch+json"}
 )
 
-func NewClusterClient() *ClusterActions {
+func NewClusterActions() *ClusterActions {
 	return &ClusterActions{
 		kubernetes: NewKubernetes(),
 		hetzner:    NewHetzner(env.HCloudToken()),
@@ -40,7 +41,7 @@ func NewClusterClient() *ClusterActions {
 func NewKubernetes() *rest.Client {
 	cert, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
-		panic(err)
+		return nil
 	}
 	certs := x509.NewCertPool()
 	certs.AppendCertsFromPEM(cert)
@@ -54,7 +55,7 @@ func NewKubernetes() *rest.Client {
 	}
 	tokenFile, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
-		panic(err)
+		return nil
 	}
 	return &rest.Client{
 		BaseUrl:     "https://kubernetes.default.svc",
@@ -78,8 +79,8 @@ func NewK3s() *rest.Client {
 	}
 }
 
-func (c ClusterActions) GetReleaseChannels() (ReleaseChannelStatuses, error) {
-	response := &K3sReleaseChannelsResponse{}
+func (c ClusterActions) GetReleaseChannels() (k3s.ReleaseChannelStatuses, error) {
+	response := &k3s.ReleaseChannelsResponse{}
 	err := c.k3s.Do(http.MethodGet, "/channels", nil, nil, response)
 	if err != nil {
 		return nil, err
@@ -87,42 +88,92 @@ func (c ClusterActions) GetReleaseChannels() (ReleaseChannelStatuses, error) {
 	return response.Data, nil
 }
 
-func (c ClusterActions) GetBootstrapServer(name string, apiServer bool, kubernetesVersion *semver.Version) (*NodeStatus, error) {
-	hetznerServers := &HetznerServersResponse{}
+func (c ClusterActions) GetServer(name string) (*NodeStatus, error) {
+	hetznerServers := &hetzner.ServersResponse{}
 	err := c.hetzner.Do(http.MethodGet, "/servers?name="+name, nil, nil, hetznerServers)
 	if err != nil {
 		return nil, err
 	}
 	server := hetznerServers.Servers[0]
-	network := server.PrivateNets[0]
+	privateNetwork := server.PrivateNets[0]
+
 	return &NodeStatus{
 		Name:       name,
 		ServerType: server.ServerType.Name,
 		Location:   server.Datacenter.Location.Name,
 		CloudId:    strconv.Itoa(server.Id),
-		ClusterIP:  network.IP,
+		ClusterIP:  privateNetwork.IP,
+		PublicIPv4: server.PublicNet.IPv4.IP,
 		BaseImage:  server.Image.Name,
-		ApiServer:  apiServer,
-		Version:    kubernetesVersion,
 		Phases: PhaseChanges{
 			PhaseChange{
-				Phase:  Active,
-				Reason: "bootstrap api server",
+				Phase:  Create,
+				Reason: "existing server",
 				Time:   server.Created,
 			},
 		},
 	}, nil
 }
 
-func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, privateNetworkId string, firewallIds []string, labels label.Labels, sshKeyIds []int, cloudInit string) (cloudId string, clusterIP string, err error) {
-	privateNetworkNumber, _ := strconv.Atoi(privateNetworkId)
-	firewalls := []HetznerFirewallRef{}
-	for _, firewallId := range firewallIds {
-		firewallNumber, _ := strconv.Atoi(firewallId)
-		firewalls = append(firewalls, HetznerFirewallRef{firewallNumber})
+func (c ClusterActions) GetServers(clusterName string) (map[string]*NodeStatus, error) {
+	hetznerServers := &hetzner.ServersResponse{}
+	err := c.hetzner.Do(http.MethodGet, fmt.Sprintf("/servers?per_page=50&label_selector=%s==%s", label.Cluster, clusterName), nil, nil, hetznerServers)
+	if err != nil {
+		return nil, err
 	}
 
-	serverRequest := CreateHetznerServerRequest{
+	nodeStatuses := map[string]*NodeStatus{}
+	for _, server := range hetznerServers.Servers {
+		privateNetwork := server.PrivateNets[0]
+		nodeStatuses[server.Name] = &NodeStatus{
+			Name:       server.Name,
+			ServerType: server.ServerType.Name,
+			Location:   server.Datacenter.Location.Name,
+			CloudId:    strconv.Itoa(server.Id),
+			ClusterIP:  privateNetwork.IP,
+			PublicIPv4: server.PublicNet.IPv4.IP,
+			BaseImage:  server.Image.Name,
+			Phases: PhaseChanges{
+				PhaseChange{
+					Phase:  Create,
+					Reason: "existing server",
+					Time:   server.Created,
+				},
+			},
+		}
+	}
+
+	return nodeStatuses, nil
+}
+
+func (c ClusterActions) CreateServer(name string, serverType string, image string, location string, sshPublicKey string, privateNetworkId string, firewallIds []string, labels label.Labels) (cloudId string, clusterIP string, err error) {
+	cloudInit := fmt.Sprintf(`#cloud-config
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+packages:
+  - curl
+  - jq
+users:
+  - name: root
+    ssh_authorized_keys:
+      - %s`, sshPublicKey)
+
+	privateNetworkNumber, _ := strconv.Atoi(privateNetworkId)
+	firewalls := []hetzner.FirewallRef{}
+	for _, firewallId := range firewallIds {
+		firewallNumber, _ := strconv.Atoi(firewallId)
+		firewalls = append(firewalls, hetzner.FirewallRef{firewallNumber})
+	}
+
+	var sshKeyIds []int
+	sshKeyIds, err = c.GetSshKeyIds()
+	if err != nil {
+		return
+	}
+
+	serverRequest := hetzner.CreateServerRequest{
 		Name:       name,
 		ServerType: serverType,
 		Image:      image,
@@ -133,7 +184,7 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 		SshKeys:    sshKeyIds,
 		CloudInit:  cloudInit,
 	}
-	serverResult := &HetznerServerResult{}
+	serverResult := &hetzner.ServerResult{}
 	err = c.hetzner.Do(http.MethodPost, "/servers", rest.JSON(), serverRequest, serverResult)
 	if err != nil {
 		return
@@ -147,7 +198,7 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 		return
 	}
 
-	serverResult = &HetznerServerResult{}
+	serverResult = &hetzner.ServerResult{}
 	err = c.hetzner.Do(http.MethodGet, fmt.Sprintf("/servers/%d", cloudIdNum), nil, nil, serverResult)
 	if err != nil {
 		return
@@ -159,7 +210,7 @@ func (c ClusterActions) CreateServer(name string, serverType string, image strin
 func (c ClusterActions) Await(resourceType string, resourceId int) error {
 	for {
 		time.Sleep(1 * time.Second)
-		result := &HetznerActionsResponse{}
+		result := &hetzner.ActionsResponse{}
 		err := c.hetzner.Do(http.MethodGet, fmt.Sprintf("/%s/%d/actions", resourceType, resourceId), nil, nil, result)
 		if err != nil {
 			log.Printf("error awaiting %s %d: API returned error %s\n", resourceType, resourceId, err.Error())
@@ -227,10 +278,9 @@ func (c ClusterActions) DrainNode(node NodeStatus) error {
 	return errs.OrNil()
 }
 
-func (c ClusterActions) GetKubernetesNode(node NodeStatus) (*NodeResource, error) {
-	log.Printf("Checking node %#v ready\n", node)
+func (c ClusterActions) GetNode(name string) (*NodeResource, error) {
 	response := &NodeResource{}
-	err := c.kubernetes.Do(http.MethodGet, "/api/v1/nodes/"+node.Name, nil, nil, response)
+	err := c.kubernetes.Do(http.MethodGet, "/api/v1/nodes/"+name, nil, nil, response)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +306,7 @@ func (c ClusterActions) SaveStatus(clusterName string, status *ClusterStatus) er
 }
 
 func (c ClusterActions) GetSshKeyIds() (keyIds []int, err error) {
-	sshKeys := &HetznerSshKeys{}
+	sshKeys := &hetzner.SshKeys{}
 	err = c.hetzner.Do(http.MethodGet, "/ssh_keys", nil, nil, sshKeys)
 	if err != nil {
 		return

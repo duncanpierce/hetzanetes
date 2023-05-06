@@ -3,8 +3,8 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	hcloudClient "github.com/duncanpierce/hetzanetes/client/hcloud"
 	"github.com/duncanpierce/hetzanetes/env"
-	"github.com/duncanpierce/hetzanetes/hcloud_client"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/login"
 	"github.com/duncanpierce/hetzanetes/model"
@@ -59,15 +59,14 @@ func Create() *cobra.Command {
 				return err
 			}
 
-			firstApiServerNodeSet := cluster.Spec.NodeSets.FirstApiServerNodeSet()
-			if firstApiServerNodeSet == nil {
-				return errors.New("cluster specifies no API servers")
+			bootstrapServerName, err := cluster.BootstrapApiServerName()
+			if err != nil {
+				return err
 			}
 
-			c := hcloud_client.New()
-			apiToken := env.HCloudToken()
+			c := hcloudClient.New()
 			labels := label.Labels{}
-			labels[label.ClusterNameLabel] = cluster.Metadata.Name
+			labels[label.Cluster] = cluster.Metadata.Name
 
 			// TODO check for name collisions on network and API server before starting, and also on server and network labels
 
@@ -81,7 +80,7 @@ func Create() *cobra.Command {
 			}
 
 			// TODO protect this network - it could be difficult to repair if deleted (e.g. server gets a new interface flannel doesn't know about)
-			networkLabels := labels.Copy().Mark(label.PrivateNetworkLabel)
+			networkLabels := labels.Copy().Mark(label.PrivateNetwork)
 			network, _, err := c.Network.Create(c, hcloud.NetworkCreateOpts{
 				Name:    cluster.Metadata.Name,
 				IPRange: &ipRange,
@@ -94,39 +93,14 @@ func Create() *cobra.Command {
 			}
 			fmt.Printf("Created network %d %s (%s)\n", network.ID, network.Name, network.IPRange.String())
 
-			publicKey, privateKey, err := login.NewSshKey()
-			if err != nil {
-				return err
-			}
-
-			config := tmpl.ClusterConfig{
-				HetznerApiToken:   apiToken,
-				ClusterName:       cluster.Metadata.Name,
-				ClusterNetworkId:  strconv.Itoa(network.ID),
-				PrivateIpRange:    ipRange.String(),
-				PodIpRange:        "10.42.0.0/16",
-				ServiceIpRange:    "10.43.0.0/16",
-				InstallDirectory:  "/var/opt/hetzanetes",
-				K3sReleaseChannel: cluster.Spec.Versions.GetKubernetes(),
-				HetzanetesTag:     cluster.Spec.Versions.GetHetzanetes(),
-				ClusterYaml:       string(clusterYaml),
-				SshPublicKey:      publicKey,
-				SshPrivateKey:     privateKey,
-			}
-			cloudInit := tmpl.Cloudinit(config, "basic.yaml")
-
-			serverType, _, err := c.ServerType.GetByName(c, firstApiServerNodeSet.ServerType)
-			if err != nil {
-				return err
-			}
-			image, _, err := c.Image.GetByNameAndArchitecture(c, firstApiServerNodeSet.GetImageOrDefault(), serverType.Architecture)
+			sshPublicKey, sshPrivateKey, err := login.NewSshKey()
 			if err != nil {
 				return err
 			}
 
 			_, allIPv4, _ := net.ParseCIDR("0.0.0.0/0")
 			_, allIPv6, _ := net.ParseCIDR("::/0")
-			clusterSelector := label.ClusterNameLabel + "==" + cluster.Metadata.Name
+			clusterSelector := label.Cluster + "==" + cluster.Metadata.Name
 			firewallRules := []hcloud.FirewallRule{
 				{
 					Protocol:  hcloud.FirewallRuleProtocolICMP,
@@ -147,7 +121,7 @@ func Create() *cobra.Command {
 					{
 						Type: hcloud.FirewallResourceTypeLabelSelector,
 						LabelSelector: &hcloud.FirewallResourceLabelSelector{
-							Selector: clusterSelector + "," + label.WorkerLabel,
+							Selector: clusterSelector + "," + label.Worker,
 						},
 					},
 				},
@@ -169,7 +143,7 @@ func Create() *cobra.Command {
 					{
 						Type: hcloud.FirewallResourceTypeLabelSelector,
 						LabelSelector: &hcloud.FirewallResourceLabelSelector{
-							Selector: clusterSelector + "," + label.ApiServerLabel,
+							Selector: clusterSelector + "," + label.ApiServer,
 						},
 					},
 				},
@@ -178,33 +152,21 @@ func Create() *cobra.Command {
 				return err
 			}
 
-			sshKeys, err := c.SSHKey.All(c)
+			actions := model.NewClusterActions()
+			err = cluster.Create(actions, strconv.Itoa(network.ID), sshPublicKey)
 			if err != nil {
 				return err
 			}
-
-			t := true
-			serverCreateResult, _, err := c.Server.Create(c, hcloud.ServerCreateOpts{
-				Name:             firstApiServerNodeSet.ServerName(cluster.Metadata.Name, 1),
-				ServerType:       serverType,
-				Image:            image,
-				SSHKeys:          sshKeys,
-				Location:         nil,
-				UserData:         cloudInit,
-				StartAfterCreate: &t,
-				Labels:           labels.Copy().Mark(label.ApiServerLabel), // TODO --segregate-api to remove this and taint the api server (or have repair do it)
-				Networks:         []*hcloud.Network{network},
-			})
+			nodeStatuses, err := actions.GetServers(cluster.Metadata.Name)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Creating server %s in %s...\n", serverCreateResult.Server.Name, serverCreateResult.Server.Datacenter.Name)
-
-			hostPort := fmt.Sprintf("%s:22", serverCreateResult.Server.PublicNet.IPv4.IP)
-			login.AwaitCloudInit(hostPort, privateKey)
-			fmt.Printf("boostrapping cluster\n")
-			commands := login.CreateCommands(cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), env.HCloudToken(), privateKey, publicKey)
-			login.Run(hostPort, privateKey, 3*time.Second, commands)
+			bootstrapNodeStatus := nodeStatuses[bootstrapServerName]
+			sshHostPort := fmt.Sprintf("%s:22", bootstrapNodeStatus.PublicIPv4)
+			login.AwaitCloudInit(sshHostPort, sshPrivateKey)
+			fmt.Printf("bootstrapping cluster\n")
+			commands := login.CreateCommands(cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), env.HCloudToken(), sshPrivateKey, sshPublicKey)
+			login.Run(sshHostPort, sshPrivateKey, 3*time.Second, commands)
 			return nil
 		},
 	}

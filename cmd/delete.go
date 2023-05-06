@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/catch"
-	"github.com/duncanpierce/hetzanetes/hcloud_client"
+	hcloudclient "github.com/duncanpierce/hetzanetes/client/hcloud"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
@@ -22,7 +22,7 @@ func Delete() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clusterName := args[0]
 
-			c := hcloud_client.New()
+			c := hcloudclient.New()
 			network, _, err := c.Network.GetByName(c, clusterName)
 			if err != nil {
 				return err
@@ -30,8 +30,8 @@ func Delete() *cobra.Command {
 			if network == nil {
 				return errors.New(fmt.Sprintf("cluster network %s not found", clusterName))
 			}
-			if _, labelled := network.Labels[label.PrivateNetworkLabel]; !labelled {
-				return errors.New(fmt.Sprintf("private network %s does not have %s label", clusterName, label.PrivateNetworkLabel))
+			if _, labelled := network.Labels[label.PrivateNetwork]; !labelled {
+				return errors.New(fmt.Sprintf("private network %s does not have %s label", clusterName, label.PrivateNetwork))
 			}
 			labelledServers, err := getServers(c, clusterName, *network)
 			if err != nil {
@@ -67,7 +67,7 @@ func Delete() *cobra.Command {
 	return cmd
 }
 
-func deleteFirewall(errs *catch.Errors, c hcloud_client.Client, firewallName string) {
+func deleteFirewall(errs *catch.Errors, c hcloudclient.Client, firewallName string) {
 	errs.Retry(5, 500*time.Millisecond, func() error {
 		firewall, _, err := c.Firewall.GetByName(c, firewallName)
 		if err != nil {
@@ -78,10 +78,10 @@ func deleteFirewall(errs *catch.Errors, c hcloud_client.Client, firewallName str
 	})
 }
 
-func getServers(c hcloud_client.Client, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
+func getServers(c hcloudclient.Client, clusterName string, network hcloud.Network) ([]*hcloud.Server, error) {
 	servers, err := c.Server.AllWithOpts(c, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
-			LabelSelector: label.ClusterNameLabel + "=" + clusterName,
+			LabelSelector: label.Cluster + "=" + clusterName,
 		},
 	})
 	if err != nil {

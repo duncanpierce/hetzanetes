@@ -1,12 +1,12 @@
 package label
 
 const (
-	AppName             = "hetzanetes"
-	ClusterNameLabel    = AppName + "-cluster"
-	PrivateNetworkLabel = AppName + "-cluster-network"
-	ApiServerLabel      = AppName + "-api"
-	WorkerLabel         = AppName + "-worker"
-	EndpointLabel       = AppName + "-endpoint"
+	AppName        = "hetzanetes"
+	Cluster        = AppName + "-cluster"
+	PrivateNetwork = AppName + "-cluster-network"
+	ApiServer      = AppName + "-api"
+	Worker         = AppName + "-worker"
+	NodeSet        = AppName + "-nodeset"
 )
 
 type Labels map[string]string
