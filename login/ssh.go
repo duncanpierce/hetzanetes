@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"log"
 	"strings"
 	"time"
 )
@@ -62,7 +63,7 @@ func RunOne(client *ssh.Client, command string) error {
 	defer session.Close()
 	err = session.Run(command)
 	if err != nil {
-		fmt.Printf("error running %s: %s", command, err.Error())
+		log.Printf("error running %s: %s", command, err.Error())
 		return err
 	}
 	return nil

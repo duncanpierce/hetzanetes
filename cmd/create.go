@@ -12,6 +12,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v3"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -91,7 +92,7 @@ func Create() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Created network %d %s (%s)\n", network.ID, network.Name, network.IPRange.String())
+			log.Printf("Created network %d %s (%s)\n", network.ID, network.Name, network.IPRange.String())
 
 			sshPublicKey, sshPrivateKey, err := login.NewSshKey()
 			if err != nil {
@@ -164,7 +165,7 @@ func Create() *cobra.Command {
 			bootstrapNodeStatus := nodeStatuses[bootstrapServerName]
 			sshHostPort := fmt.Sprintf("%s:22", bootstrapNodeStatus.PublicIPv4)
 			login.AwaitCloudInit(sshHostPort, sshPrivateKey)
-			fmt.Printf("bootstrapping cluster\n")
+			log.Printf("bootstrapping cluster\n")
 			commands := login.CreateCommands(cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), env.HCloudToken(), sshPrivateKey, sshPublicKey)
 			login.Run(sshHostPort, sshPrivateKey, 3*time.Second, commands)
 			return nil

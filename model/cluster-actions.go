@@ -88,33 +88,6 @@ func (c ClusterActions) GetReleaseChannels() (k3s.ReleaseChannelStatuses, error)
 	return response.Data, nil
 }
 
-func (c ClusterActions) GetServer(name string) (*NodeStatus, error) {
-	hetznerServers := &hetzner.ServersResponse{}
-	err := c.hetzner.Do(http.MethodGet, "/servers?name="+name, nil, nil, hetznerServers)
-	if err != nil {
-		return nil, err
-	}
-	server := hetznerServers.Servers[0]
-	privateNetwork := server.PrivateNets[0]
-
-	return &NodeStatus{
-		Name:       name,
-		ServerType: server.ServerType.Name,
-		Location:   server.Datacenter.Location.Name,
-		CloudId:    strconv.Itoa(server.Id),
-		ClusterIP:  privateNetwork.IP,
-		PublicIPv4: server.PublicNet.IPv4.IP,
-		BaseImage:  server.Image.Name,
-		Phases: PhaseChanges{
-			PhaseChange{
-				Phase:  Create,
-				Reason: "existing server",
-				Time:   server.Created,
-			},
-		},
-	}, nil
-}
-
 func (c ClusterActions) GetServers(clusterName string) (map[string]*NodeStatus, error) {
 	hetznerServers := &hetzner.ServersResponse{}
 	err := c.hetzner.Do(http.MethodGet, fmt.Sprintf("/servers?per_page=50&label_selector=%s==%s", label.Cluster, clusterName), nil, nil, hetznerServers)

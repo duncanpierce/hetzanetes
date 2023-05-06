@@ -21,7 +21,6 @@ type (
 	}
 
 	Actions interface {
-		GetServer(name string) (*NodeStatus, error)
 		GetServers(clusterName string) (map[string]*NodeStatus, error)
 		GetReleaseChannels() (k3s.ReleaseChannelStatuses, error)
 		CreateServer(name string, serverType string, image string, location string, sshPublicKey string, privateNetworkId string, firewallIds []string, labels label.Labels) (cloudId string, clusterIP string, err error)

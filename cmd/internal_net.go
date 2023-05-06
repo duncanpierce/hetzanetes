@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
+	"log"
 	"net"
 )
 
@@ -26,7 +26,7 @@ func Net() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Printf("%s: %s %s %s\n", i.Name, addr.String(), ip.String(), net.String())
+					log.Printf("%s: %s %s %s\n", i.Name, addr.String(), ip.String(), net.String())
 				}
 			}
 			return nil
