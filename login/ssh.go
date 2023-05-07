@@ -1,6 +1,7 @@
 package login
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -78,6 +79,31 @@ func Run(hostPort string, privateKey string, timeout time.Duration, commands []s
 
 	for _, command := range commands {
 		err = RunOne(client, command)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func RunCommands(hostPort string, privateKey string, timeout time.Duration, commands []Command) error {
+	client, err := Connect(hostPort, privateKey, timeout)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	for _, command := range commands {
+		session, err := client.NewSession()
+		if err != nil {
+			return err
+		}
+		if command.Stdin != nil {
+			session.Stdin = bytes.NewReader(command.Stdin)
+		}
+		err = session.Run(command.Shell)
+		session.Close()
 		if err != nil {
 			return err
 		}

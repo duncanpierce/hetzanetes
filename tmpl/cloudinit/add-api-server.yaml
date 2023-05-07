@@ -1,7 +1,0 @@
-{{template "update-packages.yaml" .}}
-runcmd:
-  - "curl -sfL 'https://get.k3s.io' | K3S_URL={{.ApiEndpoint}} K3S_TOKEN={{.JoinToken}} INSTALL_K3S_VERSION={{.KubernetesVersion}} sh -s - server {{template "api-common-config.sh" .}} --flannel-iface={{template "get-private-interface.sh" .}}"
-users:
-  - name: root
-    ssh_authorized_keys:
-      - {{.SshPublicKey}}

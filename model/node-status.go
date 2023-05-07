@@ -60,13 +60,13 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Install:
-		var commands []string
+		var command login.Command
 		if n.ApiServer {
-			commands = login.AddApiServerCommands(n.JoinEndpoint, env.K3sToken(), n.Version.String())
+			command = login.AddApiServerCommand(n.JoinEndpoint, env.K3sToken(), n.Version.String())
 		} else {
-			commands = login.AddWorkerCommands(n.JoinEndpoint, env.K3sToken(), n.Version.String())
+			command = login.AddWorkerCommand(n.JoinEndpoint, env.K3sToken(), n.Version.String())
 		}
-		err = login.Run(sshHostPort, env.SshPrivateKey(), 3*time.Second, commands)
+		err = login.RunCommands(sshHostPort, env.SshPrivateKey(), 3*time.Second, []login.Command{command})
 		if err != nil {
 			log.Printf("error installing Kubernetes: %s", err.Error())
 		} else {
