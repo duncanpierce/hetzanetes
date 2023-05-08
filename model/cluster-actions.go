@@ -7,6 +7,7 @@ import (
 	"github.com/duncanpierce/hetzanetes/catch"
 	"github.com/duncanpierce/hetzanetes/client/rest"
 	"github.com/duncanpierce/hetzanetes/env"
+	"github.com/duncanpierce/hetzanetes/json"
 	"github.com/duncanpierce/hetzanetes/label"
 	"github.com/duncanpierce/hetzanetes/model/hetzner"
 	"github.com/duncanpierce/hetzanetes/model/k3s"
@@ -72,6 +73,7 @@ func NewHetzner(token string) *rest.Client {
 		Token:   token,
 	}
 }
+
 func NewK3s() *rest.Client {
 	return &rest.Client{
 		BaseUrl: "https://update.k3s.io/v1-release",
@@ -163,7 +165,7 @@ users:
 		return
 	}
 	cloudIdNum := serverResult.Server.Id
-	log.Printf("New server %s cloud id=%d\n", name, cloudIdNum)
+	log.Printf("Created server %s cloudid=%d\n", name, cloudIdNum)
 
 	// Wait for private network to be attached (among other things)
 	err = c.Await("servers", cloudIdNum)
@@ -215,7 +217,7 @@ func (c ClusterActions) DeleteServer(node NodeStatus) (notFound bool) {
 }
 
 func (c ClusterActions) DrainNode(node NodeStatus) error {
-	log.Printf("Draining node %#v\n", node)
+	log.Printf("Draining node %s\n", json.Format(node))
 	nodePatch := &NodeResource{
 		Spec: &NodeResourceSpec{
 			Unschedulable: true,
@@ -261,7 +263,7 @@ func (c ClusterActions) GetNode(name string) (*NodeResource, error) {
 }
 
 func (c ClusterActions) DeleteNode(node NodeStatus) error {
-	log.Printf("Deleting node %#v with id %s\n", node, node.CloudId)
+	log.Printf("Deleting node %s with id %s\n", json.Format(node), node.CloudId)
 	return c.kubernetes.Do(http.MethodDelete, "/api/v1/nodes/"+node.Name, nil, nil, nil)
 }
 

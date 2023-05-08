@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "$GITHUB_TOKEN" | sudo docker login ghcr.io -u duncanpierce --password-stdin

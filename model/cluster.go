@@ -49,7 +49,8 @@ func (c *Cluster) BootstrapApiServerName() (string, error) {
 func (c *Cluster) Bootstrap(actions Actions) error {
 	log.Printf("Initializing cluster %s status field\n", c.Metadata.Name)
 	c.Status = &ClusterStatus{
-		Versions: &VersionStatus{},
+		SshPublicKey: env.SshPublicKey(),
+		Versions:     &VersionStatus{},
 		ClusterNetwork: ClusterNetworkStatus{
 			CloudId: env.HCloudNetworkId(),
 			IpRange: env.HCloudNetworkIpRange(),
@@ -67,6 +68,5 @@ func (c *Cluster) Bootstrap(actions Actions) error {
 		return err
 	}
 
-	c.Status.NodeSetStatuses.BootstrapFrom(c, servers)
-	return nil
+	return c.Status.NodeSetStatuses.BootstrapFrom(c, servers, actions)
 }

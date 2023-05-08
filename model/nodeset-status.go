@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/duncanpierce/hetzanetes/json"
 	"log"
 	"math/rand"
 	"time"
@@ -27,7 +28,7 @@ func (n *NodeSetStatuses) CreateIfNecessary(spec *NodeSetSpec) {
 	}
 }
 
-func (n *NodeSetStatuses) BootstrapFrom(cluster *Cluster, servers map[string]*NodeStatus) {
+func (n *NodeSetStatuses) BootstrapFrom(cluster *Cluster, servers map[string]*NodeStatus, actions Actions) error {
 	bootstrapApiServerName, _ := cluster.BootstrapApiServerName()
 	for _, nodeSet := range cluster.Spec.NodeSets {
 		replica := 1
@@ -42,6 +43,11 @@ func (n *NodeSetStatuses) BootstrapFrom(cluster *Cluster, servers map[string]*No
 				if serverName == bootstrapApiServerName {
 					server.SetPhase(Install, "bootstrap api server preinstalled")
 					server.SetPhase(Active, "bootstrap api server active")
+					node, err := actions.GetNode(bootstrapApiServerName)
+					if err != nil {
+						return err
+					}
+					server.Version = node.Status.NodeInfo.KubeletVersion
 				}
 				nodeStatuses = append(nodeStatuses, server)
 			}
@@ -53,12 +59,13 @@ func (n *NodeSetStatuses) BootstrapFrom(cluster *Cluster, servers map[string]*No
 			NodeStatuses: nodeStatuses,
 		})
 	}
+	return nil
 }
 
 func (n *NodeSetStatus) Repair(cluster *Cluster) {
 	log.Printf("Repairing node set '%s'\n", n.Name)
 	for _, node := range n.NodeStatuses {
-		log.Printf("'%s' status: %#v\n", node.Name, node)
+		log.Printf("'%s' status: %s\n", node.Name, json.Format(node))
 	}
 
 	target := cluster.Spec.NodeSets.Named(n.Name)

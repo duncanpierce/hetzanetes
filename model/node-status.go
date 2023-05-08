@@ -20,6 +20,7 @@ func (n *NodeStatus) SetPhase(phase Phase, reason string) {
 
 func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 	sshHostPort := fmt.Sprintf("%s:22", n.ClusterIP)
+	privateIpRange := cluster.Status.ClusterNetwork.IpRange
 	var err error
 
 	switch n.Phases.Current().Phase {
@@ -55,6 +56,7 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 		}
 
 	case Creating:
+		log.Printf("Polling %s cloud-init on %s using key %s\n", n.Name, sshHostPort, env.SshPublicKey())
 		if login.PollCloudInit(sshHostPort, env.SshPrivateKey()) {
 			n.SetPhase(Install, "server is ready for Kubernetes installation")
 		}
@@ -62,9 +64,9 @@ func (n *NodeStatus) MakeProgress(cluster *Cluster, actions Actions) {
 	case Install:
 		var command login.Command
 		if n.ApiServer {
-			command = login.AddApiServerCommand(n.JoinEndpoint, env.K3sToken(), n.Version.String())
+			command = login.AddApiServerCommand(n.JoinEndpoint, env.K3sToken(), n.Version.String(), privateIpRange)
 		} else {
-			command = login.AddWorkerCommand(n.JoinEndpoint, env.K3sToken(), n.Version.String())
+			command = login.AddWorkerCommand(n.JoinEndpoint, env.K3sToken(), n.Version.String(), privateIpRange)
 		}
 		err = login.RunCommands(sshHostPort, env.SshPrivateKey(), 3*time.Second, []login.Command{command})
 		if err != nil {

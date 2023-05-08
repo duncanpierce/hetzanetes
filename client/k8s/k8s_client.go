@@ -2,14 +2,11 @@ package k8s
 
 import (
 	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/model"
 	"io"
 	"net/http"
-	"os"
 )
 
 type (
@@ -22,32 +19,6 @@ type (
 		Items model.Clusters `json:"items"`
 	}
 )
-
-func New() *K8sClient {
-	cert, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-	if err != nil {
-		panic(err)
-	}
-	certs := x509.NewCertPool()
-	certs.AppendCertsFromPEM(cert)
-	client := http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: false,
-				RootCAs:            certs,
-			},
-		},
-	}
-	tokenFile, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		panic(err)
-	}
-	return &K8sClient{
-		BaseUrl: "https://kubernetes.default.svc",
-		Client:  client,
-		Token:   string(tokenFile),
-	}
-}
 
 func (k *K8sClient) DoRaw(method string, path string, headers map[string]string, requestBody []byte) ([]byte, error) {
 	request, err := http.NewRequest(method, k.BaseUrl+path, nil)

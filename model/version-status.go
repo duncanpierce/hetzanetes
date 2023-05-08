@@ -9,9 +9,9 @@ import (
 type (
 	VersionStatus struct {
 		Target   *semver.Version            `json:"target,omitempty"`
-		Nodes    VersionRange               `json:"nodes"`
-		Api      VersionRange               `json:"api"`
-		Workers  VersionRange               `json:"workers"`
+		Nodes    *VersionRange              `json:"nodes,omitempty"`
+		Api      *VersionRange              `json:"api,omitempty"`
+		Workers  *VersionRange              `json:"workers,omitempty"`
 		Channels k3s.ReleaseChannelStatuses `json:"channels,omitempty"`
 	}
 
@@ -47,7 +47,7 @@ func VersionMax(a, b *semver.Version) *semver.Version {
 	return b
 }
 
-func (v VersionRange) Same() bool {
+func (v *VersionRange) Same() bool {
 	if v.Max == nil {
 		return v.Min == nil
 	} else if v.Min == nil {
@@ -57,30 +57,36 @@ func (v VersionRange) Same() bool {
 	}
 }
 
-func (v VersionRange) MergeRange(other VersionRange) VersionRange {
-	return VersionRange{
+func (v *VersionRange) MergeRange(other *VersionRange) *VersionRange {
+	if v == nil {
+		return other
+	}
+	if other == nil {
+		return v
+	}
+	return &VersionRange{
 		Min: VersionMin(v.Min, other.Min),
 		Max: VersionMax(v.Max, other.Max),
 	}
 }
 
-func (v VersionRange) MergeVersion(other *semver.Version) VersionRange {
-	return v.MergeRange(VersionRange{other, other})
+func (v *VersionRange) MergeVersion(other *semver.Version) *VersionRange {
+	return v.MergeRange(&VersionRange{other, other})
 }
 
-func (v VersionStatus) NewNodeVersion(apiServer bool) *semver.Version {
+func (v *VersionStatus) NewNodeVersion(apiServer bool) *semver.Version {
 	if apiServer {
 		return v.NewApiNodeVersion()
 	}
 	return v.NewWorkerNodeVersion()
 }
 
-func (v VersionStatus) NewWorkerNodeVersion() *semver.Version {
+func (v *VersionStatus) NewWorkerNodeVersion() *semver.Version {
 	// Worker node can never have a higher version than any API node
 	return v.Api.Min
 }
 
-func (v VersionStatus) NewApiNodeVersion() *semver.Version {
+func (v *VersionStatus) NewApiNodeVersion() *semver.Version {
 	// If there is a mix of different versions, drive new API servers towards the same version
 	if !v.Api.Same() {
 		return v.Api.Max
