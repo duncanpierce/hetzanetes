@@ -8,4 +8,10 @@ import (
 var Kustomize embed.FS
 
 //go:embed default-cluster.yaml
-var DefaultCluster string
+var DefaultClusterYaml string
+
+//go:embed cluster-crd.yaml
+var ClusterCrdYaml string
+
+//go:embed repair-cluster.yaml
+var RepairClusterYaml string

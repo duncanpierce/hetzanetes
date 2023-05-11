@@ -59,7 +59,7 @@ spec:
       serviceAccountName: hetzanetes-repair
       containers:
         - name: repair-cluster
-          image: ghcr.io/duncanpierce/hetzanetes:latest
+          image: ghcr.io/duncanpierce/hetzanetes:%s
           imagePullPolicy: Always
           command: ["/hetzanetes", "internal", "repair"]
           envFrom:

@@ -7,7 +7,6 @@ type (
 	}
 	VersionsSpec struct {
 		Kubernetes string `json:"kubernetes,omitempty"`
-		Hetzanetes string `json:"hetzanetes,omitempty"`
 	}
 	NodeSetsSpec []*NodeSetSpec
 	NodeSetSpec  struct {

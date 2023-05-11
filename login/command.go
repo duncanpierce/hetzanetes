@@ -14,7 +14,7 @@ type (
 	}
 )
 
-func CreateClusterCommands(clusterYaml []byte, clusterName, privateNetworkId, privateIpRange, k3sReleaseChannel, hcloudToken, sshPrivateKey, sshPublicKey string) []Command {
+func CreateClusterCommands(clusterYaml []byte, clusterName, privateNetworkId, privateIpRange, k3sReleaseChannel, installHetzanetesVersion, hcloudToken, sshPrivateKey, sshPublicKey string) []Command {
 	commands := []Command{
 		{Shell: fmt.Sprintf("curl -sfL 'https://get.k3s.io' | INSTALL_K3S_CHANNEL=%s sh -s - server --cluster-init %s %s", k3sReleaseChannel, apiCommonConfig(), networkConfig(privateIpRange))},
 		{Shell: fmt.Sprintf("kubectl create secret generic hcloud -n kube-system --from-literal=HCLOUD_TOKEN=%s --from-literal=HCLOUD_NETWORK=%s --from-literal=HCLOUD_NETWORK_ID=%s --from-literal=HCLOUD_NETWORK_IP_RANGE=%s", hcloudToken, clusterName, privateNetworkId, privateIpRange)},
@@ -27,9 +27,14 @@ func CreateClusterCommands(clusterYaml []byte, clusterName, privateNetworkId, pr
 	}
 	commands = append(commands, sendFileCommands...)
 	commands = append(commands,
-		Command{Shell: fmt.Sprintf("kubectl apply -k .")},
-		Command{Stdin: clusterYaml, Shell: "kubectl apply -f -"},
+		Command{Shell: "kubectl apply -k ."},
+		Command{Stdin: []byte(tmpl.ClusterCrdYaml), Shell: "kubectl apply -f -"},
 	)
+	if installHetzanetesVersion != "none" {
+		repairYaml := fmt.Sprintf(tmpl.RepairClusterYaml, installHetzanetesVersion)
+		commands = append(commands, Command{Stdin: []byte(repairYaml), Shell: "kubectl apply -f -"})
+	}
+	commands = append(commands, Command{Stdin: clusterYaml, Shell: "kubectl apply -f -"})
 	return commands
 }
 
@@ -53,9 +58,13 @@ func SendFiles(filesystem fs.FS, directoryName string) ([]Command, error) {
 		if err != nil {
 			return nil, err
 		}
-		commands = append(commands, Command{Stdin: bytes, Shell: fmt.Sprintf("cat > '%s'", dirEntry.Name())})
+		commands = append(commands, SendFile(dirEntry.Name(), bytes))
 	}
 	return commands, nil
+}
+
+func SendFile(filename string, contents []byte) Command {
+	return Command{Stdin: contents, Shell: fmt.Sprintf("cat > '%s'", filename)}
 }
 
 func networkConfig(privateIpRange string) string {

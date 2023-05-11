@@ -21,6 +21,7 @@ import (
 
 func Create() *cobra.Command {
 	var clusterYamlFilename string
+	var installHetzanetesVersion string
 
 	ipRange := net.IPNet{IP: net.IP{10, 0, 0, 0}, Mask: net.IPMask{255, 255, 0, 0}}
 	sshPort := "22"
@@ -50,7 +51,7 @@ func Create() *cobra.Command {
 				if len(args) < 1 {
 					return errors.New("must provide a cluster name")
 				}
-				clusterYaml = []byte(fmt.Sprintf(tmpl.DefaultCluster, args[0]))
+				clusterYaml = []byte(fmt.Sprintf(tmpl.DefaultClusterYaml, args[0]))
 				if err != nil {
 					return err
 				}
@@ -166,10 +167,11 @@ func Create() *cobra.Command {
 			sshHostPort := fmt.Sprintf("%s:22", bootstrapNodeStatus.PublicIPv4)
 			login.AwaitCloudInit(sshHostPort, sshPrivateKey)
 			log.Printf("bootstrapping cluster\n")
-			commands := login.CreateClusterCommands(clusterYaml, cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), env.HCloudToken(), sshPrivateKey, sshPublicKey)
+			commands := login.CreateClusterCommands(clusterYaml, cluster.Metadata.Name, strconv.Itoa(network.ID), ipRange.String(), cluster.Spec.Versions.GetKubernetes(), installHetzanetesVersion, env.HCloudToken(), sshPrivateKey, sshPublicKey)
 			return login.RunCommands(sshHostPort, sshPrivateKey, 3*time.Second, commands)
 		},
 	}
 	cmd.Flags().StringVarP(&clusterYamlFilename, "filename", "f", "", "Name of YAML file specifying cluster configuration")
+	cmd.Flags().StringVarP(&installHetzanetesVersion, "hetzanetes-version", "v", "latest", "Version of Hetzanetes to install in the cluster ('none' to skip install for testing)")
 	return cmd
 }
