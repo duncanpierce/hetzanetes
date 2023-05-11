@@ -6,10 +6,3 @@ func (v VersionsSpec) GetKubernetes() string {
 	}
 	return v.Kubernetes
 }
-
-func (v VersionsSpec) GetHetzanetes() string {
-	if v.Hetzanetes == "" {
-		return "latest"
-	}
-	return v.Hetzanetes
-}

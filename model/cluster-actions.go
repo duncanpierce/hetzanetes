@@ -13,7 +13,6 @@ import (
 	"github.com/duncanpierce/hetzanetes/model/k3s"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 )
@@ -31,21 +30,9 @@ var (
 	strategicMerge         = map[string]string{"Content-Type": "application/merge-patch+json"}
 )
 
-func NewClusterActions() *ClusterActions {
-	return &ClusterActions{
-		kubernetes: NewKubernetes(),
-		hetzner:    NewHetzner(env.HCloudToken()),
-		k3s:        NewK3s(),
-	}
-}
-
-func NewKubernetes() *rest.Client {
-	cert, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-	if err != nil {
-		return nil
-	}
+func NewClusterActions(server string, certificate []byte, token []byte) (*ClusterActions, error) {
 	certs := x509.NewCertPool()
-	certs.AppendCertsFromPEM(cert)
+	certs.AppendCertsFromPEM(certificate)
 	client := http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -54,16 +41,18 @@ func NewKubernetes() *rest.Client {
 			},
 		},
 	}
-	tokenFile, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		return nil
-	}
-	return &rest.Client{
-		BaseUrl:     "https://kubernetes.default.svc",
+	kubernetes := &rest.Client{
+		BaseUrl:     server,
 		Http:        client,
-		Token:       string(tokenFile),
+		Token:       string(token),
 		LogResponse: true,
 	}
+
+	return &ClusterActions{
+		kubernetes: kubernetes,
+		hetzner:    NewHetzner(env.HCloudToken()),
+		k3s:        NewK3s(),
+	}, nil
 }
 
 func NewHetzner(token string) *rest.Client {

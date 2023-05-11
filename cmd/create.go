@@ -154,7 +154,11 @@ func Create() *cobra.Command {
 				return err
 			}
 
-			actions := model.NewClusterActions()
+			// TODO ideally we don't include Kubernetes REST client in NewClusterActions since it's impossible to create a usable one at this stage
+			actions, err := model.NewClusterActions("", nil, nil)
+			if err != nil {
+				return err
+			}
 			err = cluster.Create(actions, strconv.Itoa(network.ID), sshPublicKey)
 			if err != nil {
 				return err

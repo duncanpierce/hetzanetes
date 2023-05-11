@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"github.com/duncanpierce/hetzanetes/kubeconfig"
 	"github.com/duncanpierce/hetzanetes/model"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
 	"log"
+	"os"
 	"time"
 )
 
@@ -14,13 +16,41 @@ type (
 )
 
 func Repair() *cobra.Command {
+	var kubeconfigFilename string
+
 	cmd := &cobra.Command{
-		Use:   "repair",
-		Short: "Repair the cluster",
+		Use:              "repair",
+		Short:            "Repair the cluster",
+		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			act := model.NewClusterActions()
+			var (
+				server      string
+				certificate []byte
+				token       []byte
+				err         error
+			)
+			if kubeconfigFilename != "" {
+				kubeconfigContents, err := os.ReadFile(kubeconfigFilename)
+				if err != nil {
+					return err
+				}
+				server, certificate, token, err = kubeconfig.FromConfig(kubeconfigContents)
+				if err != nil {
+					return err
+				}
+			} else {
+				server, certificate, token, err = kubeconfig.InCluster()
+				if err != nil {
+					return err
+				}
+			}
+
+			actions, err := model.NewClusterActions(server, certificate, token)
+			if err != nil {
+				return err
+			}
 			for range time.Tick(10 * time.Second) {
-				clusterList, err := act.GetClusterList()
+				clusterList, err := actions.GetClusterList()
 				if err != nil {
 					log.Printf("error getting clusters: %s\n", err.Error())
 					continue
@@ -35,7 +65,7 @@ func Repair() *cobra.Command {
 					continue
 				}
 
-				err = cluster.Repair(act)
+				err = cluster.Repair(actions)
 
 				if err != nil {
 					log.Printf("error repairing cluster: %s\n", err.Error())
@@ -45,5 +75,7 @@ func Repair() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&kubeconfigFilename, "kubeconfig", "k", "", "Name of kubeconfig YAML file to use to connect (not required when running in the cluster)")
 	return cmd
 }
