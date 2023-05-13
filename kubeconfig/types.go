@@ -21,7 +21,7 @@ type (
 	Cluster struct {
 		Name    string `json:"name"`
 		Cluster struct {
-			CertificateAuthorityData []byte `json:"certificate-authority-data"`
+			CertificateAuthorityData string `json:"certificate-authority-data"`
 			Server                   string `json:"server"`
 		} `json:"cluster"`
 	}
@@ -29,7 +29,7 @@ type (
 	User struct {
 		Name string `json:"name"`
 		User struct {
-			Token []byte `json:"token"`
+			Token string `json:"token"`
 		} `json:"user"`
 	}
 )
@@ -43,20 +43,20 @@ func (k *KubeConfig) GetContext() *Context {
 	return nil
 }
 
-func (k *KubeConfig) GetClusterApiServer(name string) (server string, certificate []byte) {
+func (k *KubeConfig) GetClusterApiServer(name string) (server string, certificateBase64 string) {
 	for _, cluster := range k.Clusters {
 		if cluster.Name == name {
 			return cluster.Cluster.Server, cluster.Cluster.CertificateAuthorityData
 		}
 	}
-	return "", nil
+	return "", ""
 }
 
-func (k *KubeConfig) GetUserToken(name string) (token []byte) {
+func (k *KubeConfig) GetUserToken(name string) (token string) {
 	for _, user := range k.Users {
 		if user.Name == name {
 			return user.User.Token
 		}
 	}
-	return nil
+	return ""
 }

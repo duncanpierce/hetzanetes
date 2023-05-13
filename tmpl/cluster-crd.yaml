@@ -54,6 +54,8 @@ spec:
             status:
               type: object
               properties:
+                sshPublicKey:
+                  type: string
                 versions:
                   type: object
                   properties:

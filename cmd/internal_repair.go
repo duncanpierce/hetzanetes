@@ -26,7 +26,7 @@ func Repair() *cobra.Command {
 			var (
 				server      string
 				certificate []byte
-				token       []byte
+				token       string
 				err         error
 			)
 			if kubeconfigFilename != "" {
@@ -49,28 +49,20 @@ func Repair() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			for range time.Tick(10 * time.Second) {
+			for {
 				clusterList, err := actions.GetClusterList()
 				if err != nil {
 					log.Printf("error getting clusters: %s\n", err.Error())
-					continue
-				}
-				if len(clusterList.Items) != 1 {
+				} else if len(clusterList.Items) != 1 {
 					log.Printf("expected 1 Cluster resource but found %d", len(clusterList.Items))
-					continue
+				} else {
+					cluster := clusterList.Items[0]
+					err = cluster.Repair(actions)
+					if err != nil {
+						log.Printf("error repairing cluster: %s\n", err.Error())
+					}
 				}
-				cluster := clusterList.Items[0]
-				if err != nil {
-					log.Printf("error getting servers: %s\n", err.Error())
-					continue
-				}
-
-				err = cluster.Repair(actions)
-
-				if err != nil {
-					log.Printf("error repairing cluster: %s\n", err.Error())
-					continue
-				}
+				<-time.Tick(10 * time.Second)
 			}
 			return nil
 		},

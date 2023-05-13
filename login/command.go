@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/duncanpierce/hetzanetes/tmpl"
 	"io/fs"
+	"log"
 	"path/filepath"
 )
 
@@ -29,6 +30,7 @@ func CreateClusterCommands(clusterYaml []byte, clusterName, privateNetworkId, pr
 	commands = append(commands,
 		Command{Shell: "kubectl apply -k ."},
 		Command{Stdin: []byte(tmpl.ClusterCrdYaml), Shell: "kubectl apply -f -"},
+		Command{Stdin: []byte(tmpl.SetupRepairYaml), Shell: "kubectl apply -f -"},
 	)
 	if installHetzanetesVersion != "none" {
 		repairYaml := fmt.Sprintf(tmpl.RepairClusterYaml, installHetzanetesVersion)
@@ -39,11 +41,15 @@ func CreateClusterCommands(clusterYaml []byte, clusterName, privateNetworkId, pr
 }
 
 func AddWorkerCommand(apiEndPoint, k3sJoinToken, k3sVersion, privateIpRange string) Command {
-	return Command{Shell: fmt.Sprintf("curl -sfL 'https://get.k3s.io' | K3S_URL=%s K3S_TOKEN=%s INSTALL_K3S_VERSION=%s sh -s - --kubelet-arg cloud-provider=external %s", apiEndPoint, k3sJoinToken, k3sVersion, networkConfig(privateIpRange))}
+	shell := fmt.Sprintf("curl -sfL 'https://get.k3s.io' | K3S_URL=%s K3S_TOKEN=%s INSTALL_K3S_VERSION=%s sh -s - --kubelet-arg cloud-provider=external %s", apiEndPoint, k3sJoinToken, k3sVersion, networkConfig(privateIpRange))
+	log.Printf("Add worker command: %s\n", shell)
+	return Command{Shell: shell}
 }
 
 func AddApiServerCommand(apiEndPoint, k3sJoinToken, k3sVersion, privateIpRange string) Command {
-	return Command{Shell: fmt.Sprintf("curl -sfL 'https://get.k3s.io' | K3S_URL=%s K3S_TOKEN=%s INSTALL_K3S_VERSION=%s sh -s - server %s %s", apiEndPoint, k3sJoinToken, k3sVersion, apiCommonConfig(), networkConfig(privateIpRange))}
+	shell := fmt.Sprintf("curl -sfL 'https://get.k3s.io' | K3S_URL=%s K3S_TOKEN=%s INSTALL_K3S_VERSION=%s sh -s - server %s %s", apiEndPoint, k3sJoinToken, k3sVersion, apiCommonConfig(), networkConfig(privateIpRange))
+	log.Printf("Add worker command: %s\n", shell)
+	return Command{Shell: shell}
 }
 
 func SendFiles(filesystem fs.FS, directoryName string) ([]Command, error) {

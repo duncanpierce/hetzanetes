@@ -1,39 +1,3 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: hetzanetes-repair
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: edit-hetzanetes
-rules:
-  - apiGroups: ["hetzanetes.duncanpierce.org"]
-    resources:
-    - "clusters"
-    - "clusters/status"
-    verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources:
-    - "nodes"
-    - "pods"
-    - "pods/eviction"
-    verbs: ["get", "watch", "list", "create", "update", "patch", "delete"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: hetzanetes-cluster-repair
-subjects:
-  - kind: ServiceAccount
-    name: hetzanetes-repair
-    namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: edit-hetzanetes
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:

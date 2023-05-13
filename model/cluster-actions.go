@@ -30,22 +30,27 @@ var (
 	strategicMerge         = map[string]string{"Content-Type": "application/merge-patch+json"}
 )
 
-func NewClusterActions(server string, certificate []byte, token []byte) (*ClusterActions, error) {
-	certs := x509.NewCertPool()
-	certs.AppendCertsFromPEM(certificate)
-	client := http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: false,
-				RootCAs:            certs,
+func NewClusterActions(server string, certificate []byte, token string) (*ClusterActions, error) {
+	var kubernetes *rest.Client
+	if len(certificate) != 0 {
+		certs := x509.NewCertPool()
+		if !certs.AppendCertsFromPEM(certificate) {
+			return nil, fmt.Errorf("failed to parse server certificate PEM")
+		}
+		client := http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: false,
+					RootCAs:            certs,
+				},
 			},
-		},
-	}
-	kubernetes := &rest.Client{
-		BaseUrl:     server,
-		Http:        client,
-		Token:       string(token),
-		LogResponse: true,
+		}
+		kubernetes = &rest.Client{
+			BaseUrl:     server,
+			Http:        client,
+			Token:       token,
+			LogResponse: true,
+		}
 	}
 
 	return &ClusterActions{

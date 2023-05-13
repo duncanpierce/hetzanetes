@@ -56,37 +56,6 @@ func Connect(hostPort string, privateKey string, timeout time.Duration) (*ssh.Cl
 	return client, nil
 }
 
-func RunOne(client *ssh.Client, command string) error {
-	session, err := client.NewSession()
-	if err != nil {
-		return err
-	}
-	defer session.Close()
-	err = session.Run(command)
-	if err != nil {
-		log.Printf("error running %s: %s", command, err.Error())
-		return err
-	}
-	return nil
-}
-
-func Run(hostPort string, privateKey string, timeout time.Duration, commands []string) error {
-	client, err := Connect(hostPort, privateKey, timeout)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
-	for _, command := range commands {
-		err = RunOne(client, command)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func RunCommands(hostPort string, privateKey string, timeout time.Duration, commands []Command) error {
 	client, err := Connect(hostPort, privateKey, timeout)
 	if err != nil {
@@ -102,7 +71,9 @@ func RunCommands(hostPort string, privateKey string, timeout time.Duration, comm
 		if command.Stdin != nil {
 			session.Stdin = bytes.NewReader(command.Stdin)
 		}
-		err = session.Run(command.Shell)
+		log.Printf("Running %s\n", command.Shell)
+		response, err := session.CombinedOutput(command.Shell)
+		log.Printf("Response %s\n", string(response))
 		session.Close()
 		if err != nil {
 			return err

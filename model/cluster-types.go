@@ -9,7 +9,7 @@ type (
 	Clusters []*Cluster
 
 	Cluster struct {
-		ApiVersion string         `json:"apiVersion,omitempty" yaml:"apiVersion"`
+		ApiVersion string         `json:"apiVersion,omitempty"`
 		Kind       string         `json:"kind,omitempty"`
 		Metadata   *Metadata      `json:"metadata,omitempty"`
 		Spec       *Spec          `json:"spec,omitempty"`

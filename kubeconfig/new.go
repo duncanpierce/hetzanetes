@@ -1,41 +1,49 @@
 package kubeconfig
 
 import (
+	"encoding/base64"
 	"fmt"
-	"gopkg.in/yaml.v3"
+	"github.com/ghodss/yaml"
 	"os"
 )
 
-func InCluster() (server string, certificate []byte, token []byte, err error) {
+func InCluster() (server string, certificate []byte, token string, err error) {
 	certificate, err = os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
 		return
 	}
-	token, err = os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	var tokenBytes []byte
+	tokenBytes, err = os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		return
 	}
+	token = string(tokenBytes)
 	server = "https://kubernetes.default.svc"
 	return
 }
 
-func FromConfig(kubeconfig []byte) (server string, certificate []byte, token []byte, err error) {
+func FromConfig(kubeconfig []byte) (server string, certificate []byte, token string, err error) {
 	config := &KubeConfig{}
 	err = yaml.Unmarshal(kubeconfig, &config)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, "", err
 	}
 	context := config.GetContext()
 	if context == nil {
-		return "", nil, nil, fmt.Errorf("no context has been set in kubeconfig file")
+		return "", nil, "", fmt.Errorf("no context has been set in kubeconfig file")
 	}
-	server, certificate = config.GetClusterApiServer(context.Context.User)
-	if server == "" || certificate == nil {
-		return "", nil, nil, fmt.Errorf("no server or certificate data has been set in kubeconfig file")
+	var certificateBase64 string
+	server, certificateBase64 = config.GetClusterApiServer(context.Context.Cluster)
+	if server == "" || certificateBase64 == "" {
+		return "", nil, "", fmt.Errorf("no server or certificate data has been set in kubeconfig file")
+	}
+	certificate, err = base64.StdEncoding.DecodeString(certificateBase64)
+	if err != nil {
+		return "", nil, "", err
 	}
 	token = config.GetUserToken(context.Context.User)
-	if token == nil {
-		return "", nil, nil, fmt.Errorf("no auth token has been set in kubeconfig file")
+	if token == "" {
+		return "", nil, "", fmt.Errorf("no auth token has been set in kubeconfig file")
 	}
 	return
 }

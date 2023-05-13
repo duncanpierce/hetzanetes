@@ -13,5 +13,8 @@ var DefaultClusterYaml string
 //go:embed cluster-crd.yaml
 var ClusterCrdYaml string
 
+//go:embed setup-repair.yaml
+var SetupRepairYaml string
+
 //go:embed repair-cluster.yaml
 var RepairClusterYaml string

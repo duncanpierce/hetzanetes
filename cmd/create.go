@@ -9,9 +9,9 @@ import (
 	"github.com/duncanpierce/hetzanetes/login"
 	"github.com/duncanpierce/hetzanetes/model"
 	"github.com/duncanpierce/hetzanetes/tmpl"
+	"github.com/ghodss/yaml"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v3"
 	"log"
 	"net"
 	"os"
@@ -155,7 +155,7 @@ func Create() *cobra.Command {
 			}
 
 			// TODO ideally we don't include Kubernetes REST client in NewClusterActions since it's impossible to create a usable one at this stage
-			actions, err := model.NewClusterActions("", nil, nil)
+			actions, err := model.NewClusterActions("", nil, "")
 			if err != nil {
 				return err
 			}
